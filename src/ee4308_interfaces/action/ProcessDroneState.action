@@ -1,0 +1,5 @@
+char state
+---
+std_msgs/Empty result # result
+---
+std_msgs/Empty feedback # feedback

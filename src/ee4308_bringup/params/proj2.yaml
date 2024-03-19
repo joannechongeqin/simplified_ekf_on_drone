@@ -1,0 +1,97 @@
+drone:
+  behavior:
+    ros__parameters:
+      services:
+        get_turtle_waypoint: "/turtle/get_waypoint"
+      topics:
+        odom_drone: "odom2" # cannot use odom
+        odom_turtle: "/turtle/odom"
+        waypoint: "waypoint"
+        takeoff: "takeoff"
+        land: "land"
+      frame_id: "/world"
+      nearby: 0.3
+      cruise_height: 3.0
+      frequency: 5.0
+      use_sim_time: true
+  controller2:
+    ros__parameters:
+      services:
+        get_plan: "get_plan"
+      topics:
+        odom_drone: "odom2" # cannot use odom
+        waypoint: "waypoint" 
+        cmd_vel: "cmd_vel"
+        lookahead: "lookahead"
+      frame_id: "/world"
+      lookahead_distance: 1.0
+      kp_horz: 0.5
+      kp_vert: 0.5
+      max_horz_vel: 1.0
+      max_horz_acc: 1.0
+      max_vert_vel: 0.5
+      max_vert_acc: 0.5
+      yaw_vel: 0.3
+      frequency: 10.0
+      use_sim_time: true # declared by default
+  smoother:
+    ros__parameters:
+      services:
+        get_plan: "get_plan"
+      topics:
+        odom_drone: "odom2" # cannot use odom
+        plan: "plan"
+      frame_id: "/world"
+      average_vel: 1.0
+      interval: 0.02
+      use_sim_time: true
+  estimator:
+    ros__parameters:
+      topics:
+        odom_drone: "odom2" # cannot use odom
+        gps: "gps"
+        sonar: "sonar"
+        magnetic: "magnetic"
+        baro: "altitude"
+        imu: "imu"
+        gt_pose: "gt_pose"
+        gt_vel: "gt_vel"
+      frequency: 10.0
+      G: 9.8
+      var_imu_x: 0.2
+      var_imu_y: 0.2
+      var_imu_z: 0.2
+      var_imu_a: 0.2
+      var_gps_x: 0.2
+      var_gps_y: 0.2
+      var_gps_z: 0.2
+      var_baro: 0.2
+      var_sonar: 0.2
+      var_magnet: 0.2
+      rad_polar: 6356752.3
+      rad_equator: 6378137.0
+      keep_old_sonar: 0.5
+      use_gt: true
+      verbose: true
+      use_sim_time: true
+
+
+######################################################
+
+turtle:
+  behavior:
+    ros__parameters:
+      waypoints: [1.5, 0., 1.5, 1.5, -1.5, 0.0, 0.0, -2.0]
+      use_sim_time: true
+
+  planner_smoother:
+    ros__parameters:
+      use_sim_time: true
+
+  controller:
+    ros__parameters:
+      use_sim_time: true
+
+  mapper:
+    ros__parameters:
+      use_sim_time: true
