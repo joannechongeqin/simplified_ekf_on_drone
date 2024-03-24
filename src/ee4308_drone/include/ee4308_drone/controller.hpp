@@ -313,7 +313,7 @@ namespace ee4308::drone
 
             // --- FIXME ---
             double lookahead_thres = params_.lookahead_distance;
-            for (size_t i = 0; i = plan.size(); ++i){
+            for (size_t i = 1; i < plan.size(); ++i){
                 double path_x = plan[i].pose.position.x;
                 double path_y = plan[i].pose.position.y;
                 double path_z = plan[i].pose.position.z;
@@ -326,7 +326,7 @@ namespace ee4308::drone
                 double distance = sqrt(pow(diff_x, 2) + pow(diff_y, 2) + pow(diff_z, 2));
                 if (distance > lookahead_thres){
                     lookahead_.point = plan[i].pose.position;
-                    break;
+                    continue;
                 }
                 lookahead_.point = plan.back().pose.position; // No points found -> lookahead = desired waypoint
             }
