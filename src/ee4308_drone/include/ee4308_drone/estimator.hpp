@@ -414,6 +414,28 @@ namespace ee4308::drone
             // params._var_imu_x, ...y, ...z, ...a
             // Xx_ = ..., Xy_, Xz_, Xa_
             // Px_, Py_, Pz_, Pa_
+
+            double u_x = msg.linear_acceleration.x; // u_x,k = Measured IMU x acceleration value in robot frame
+            double u_y = msg.linear_acceleration.y; // u_y,k = Measured IMU y acceleration value in robot frame
+            double u_z = msg.linear_acceleration.z; // u_z,k = Measured IMU z acceleration value in robot frame
+            double u_a = msg.angular_velocity.z; // u_ψ,k = Measured IMU ψ velocity value in robot frame
+            double G = params_.G;
+            double prev_x = Xx_[0], prev_xx = Xx_[1]; // xx = x_dot
+            double prev_y = Xy_[0], prev_yy = Xy_[1]; // yy = y_dot
+            double prev_z = Xz_[0], prev_zz = Xz_[1]; // zz = z_dot
+            double yaw = Xa_[0];
+
+            // --- Simplified Motion Model ---
+            Xx_[0] = prev_x + prev_xx * dt + 0.5 * dt * dt * (u_x * cos(yaw) - u_y * sin(yaw));
+            Xx_[1] = prev_xx + dt * (u_x * cos(yaw) - u_y * sin(yaw));
+            Xy_[0] = prev_y + prev_yy * dt - 0.5 * dt * dt * (u_x * sin(yaw) + u_y * cos(yaw));
+            Xy_[1] = prev_yy - dt * (u_x * sin(yaw) + u_y * cos(yaw));
+            Xz_[0] = prev_z + prev_zz * dt + 0.5 * dt * dt * (u_z - G);
+            Xz_[1] = prev_zz + dt * (u_z - G);
+            Xa_[0] = yaw + dt * u_a;
+            Xa_[1] = u_a;
+
+
             // --- EOFIXME ---
         }
     };
