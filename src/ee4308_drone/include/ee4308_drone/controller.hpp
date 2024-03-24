@@ -371,6 +371,8 @@ namespace ee4308::drone
             // Constraining accelerations
             double new_horz_acc = (d_horz - horz_prev) / elapsed_;
             double new_vert_acc = (d_vert - vert_prev) / elapsed_;
+            std::cout << new_horz_acc << ";" << new_vert_acc << std::endl;
+            
             if (abs(new_horz_acc) >= params_.max_horz_acc)
                 new_horz_acc = params_.max_horz_acc * sgn(new_horz_acc);
             new_horz_vel = horz_prev + new_horz_acc * elapsed_;
