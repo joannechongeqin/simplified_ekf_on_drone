@@ -312,8 +312,24 @@ namespace ee4308::drone
             std::vector<geometry_msgs::msg::PoseStamped> plan = getPlan();
 
             // --- FIXME ---
-            // params_.lookahead_distance
-            lookahead_.point = plan.back().pose.position;
+            double lookahead_thres = params_.lookahead_distance;
+            for (size_t i = 0; i = plan.size(); ++i){
+                double path_x = plan[i].pose.position.x;
+                double path_y = plan[i].pose.position.y;
+                double path_z = plan[i].pose.position.z;
+                double drone_x = drone_pose.position.x;
+                double drone_y = drone_pose.position.y;
+                double drone_z = drone_pose.position.z;
+                double diff_x = path_x - drone_x;
+                double diff_y = path_y - drone_y;
+                double diff_z = path_z - drone_z;
+                double distance = sqrt(pow(diff_x, 2) + pow(diff_y, 2) + pow(diff_z, 2));
+                if (distance > lookahead_thres){
+                    lookahead_.point = plan[i].pose.position;
+                    break;
+                }
+                lookahead_.point = plan.back().pose.position; // No points found -> lookahead = desired waypoint
+            }
             // --- EOFIXME ---
         }
 
@@ -333,10 +349,48 @@ namespace ee4308::drone
             // cmd_vel_
             // params_.yaw_vel
             // --- Remove the following code after fixing ---
-            cmd_vel_.linear.x = 0.5 * dx/ sqrt(dx*dx +dy*dy);
-            cmd_vel_.linear.y = 0.5 * dy/ sqrt(dx*dx + dy*dy);
-            cmd_vel_.linear.z = 0.25 * dz;
-            cmd_vel_.angular.z = 0;
+
+            // Lookahead point in robot frame
+            double lookahead_rbtx = dx * cos(drone_yaw) + dy * sin(drone_yaw);
+            double lookahead_rbty = dy * cos(drone_yaw) - dx * sin(drone_yaw);
+            double lookahead_rbtz = dz;
+
+            // Desired horizontal & vertical command linear velocities
+            double d_horz = params_.kp_horz * sqrt(pow(lookahead_rbtx, 2) + pow(lookahead_rbty, 2));
+            double d_vert = params_.kp_vert * dz;
+
+            // Previous horizontal & vertical command linear velocities
+            double prev_x = cmd_vel_.linear.x;
+            double prev_y = cmd_vel_.linear.y;
+            double prev_z = cmd_vel_.linear.z;
+
+            double horz_prev = sqrt(pow(prev_x, 2) + pow(prev_y, 2));
+            double vert_prev = prev_z;
+            double new_horz_vel, new_vert_vel;
+
+            // Constraining accelerations
+            double new_horz_acc = (d_horz - horz_prev) / elapsed_;
+            double new_vert_acc = (d_vert - vert_prev) / elapsed_;
+            if (abs(new_horz_acc) >= params_.max_horz_acc)
+                new_horz_acc = params_.max_horz_acc * sgn(new_horz_acc);
+            new_horz_vel = horz_prev + new_horz_acc * elapsed_;
+
+            if (abs(new_vert_acc) >= params_.max_vert_acc)
+                new_vert_acc = params_.max_vert_acc * sgn(new_vert_acc);
+            new_vert_vel = vert_prev + new_vert_acc * elapsed_;
+
+            // Constraining velocities
+            if (abs(new_horz_vel) >= params_.max_horz_vel)
+                new_horz_vel = params_.max_horz_vel * sgn(new_horz_vel);
+
+            if (abs(new_vert_vel) >= params_.max_vert_vel)
+                new_vert_vel = params_.max_vert_vel * sgn(new_vert_vel);
+
+            // Final velocities
+            cmd_vel_.linear.x = new_horz_vel * (lookahead_rbtx / sqrt(pow(lookahead_rbtx, 2) + pow(lookahead_rbty, 2)));
+            cmd_vel_.linear.y = new_horz_vel * (lookahead_rbty / sqrt(pow(lookahead_rbtx, 2) + pow(lookahead_rbty, 2)));
+            cmd_vel_.linear.z = new_vert_vel;
+            cmd_vel_.angular.z = params_.yaw_vel;
             // --- EOFIXME ---
         }
     };
