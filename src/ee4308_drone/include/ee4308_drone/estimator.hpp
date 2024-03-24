@@ -337,11 +337,28 @@ namespace ee4308::drone
             //      Store the measured x,y,z, in Ygps_.
             //      Required for terminal printing during demonstration.
 
-            // --- FIXME ---
+            // --- FIXME ---          
+
             // get NED
+            Eigen::Vector3d NED;
+            Eigen::Matrix3d R_NED2ECEF; // rotation matrix from NED frame to ECEF frame
+            R_NED2ECEF << -sin_lat * cos_lon, -sin_lon, -cos_lat * cos_lon,
+                          -sin_lat * sin_lon,  cos_lon, -cos_lat * sin_lon,
+                                cos_lat,          0,         -sin_lat;
+            NED = R_NED2ECEF.transpose() * (ECEF - initial_ECEF_);
+
             // get world coords (Ygps_ = ...)
+            Eigen::Vector3d X_gps;
+            Eigen::Matrix3d R_NED2WORLD; // rotation matrix from NED frame to world frame
+            R_NED2WORLD << 0, 1, 0,
+                           1, 0, 0,
+                           0, 0, -1;
+            Ygps_ = R_NED2WORLD * NED + initial_;
+
             // Correct x y z
             // params_.var_gps_x, ...y, ...z
+            // ----- TODO -----
+
             // --- EOFIXME ---
         }
 
