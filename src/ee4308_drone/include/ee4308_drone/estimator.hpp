@@ -348,16 +348,26 @@ namespace ee4308::drone
             NED = R_NED2ECEF.transpose() * (ECEF - initial_ECEF_);
 
             // get world coords (Ygps_ = ...)
-            Eigen::Vector3d X_gps;
             Eigen::Matrix3d R_NED2WORLD; // rotation matrix from NED frame to world frame
             R_NED2WORLD << 0, 1, 0,
                            1, 0, 0,
                            0, 0, -1;
-            Ygps_ = R_NED2WORLD * NED + initial_;
+            Ygps_ = R_NED2WORLD * NED + initial_; // measurement
 
             // Correct x y z
             // params_.var_gps_x, ...y, ...z
             // ----- TODO -----
+            Eigen::Vector2d H_gps = {1, 0}; // Jacobian of the measurement with respect to the robot state
+            double V_gps = 1; // Jacobian of the measurement with respect to raw sensor measurements
+
+            // variances of GPS noise in world frame 
+            double R_gps_x = params_.var_gps_x; 
+            double R_gps_y = params_.var_gps_y;
+            double R_gps_z = params_.var_gps_z;
+
+            // calculate K (kalman gain)
+            // update xyz
+            // update covariance
 
             // --- EOFIXME ---
         }
@@ -444,22 +454,65 @@ namespace ee4308::drone
             double u_y = msg.linear_acceleration.y; // u_y,k = Measured IMU y acceleration value in robot frame
             double u_z = msg.linear_acceleration.z; // u_z,k = Measured IMU z acceleration value in robot frame
             double u_a = msg.angular_velocity.z; // u_ψ,k = Measured IMU ψ velocity value in robot frame
-            double G = params_.G;
+            double G = params_.G; // acceleration due to gravity
             double prev_x = Xx_[0], prev_xx = Xx_[1]; // xx = x_dot
             double prev_y = Xy_[0], prev_yy = Xy_[1]; // yy = y_dot
             double prev_z = Xz_[0], prev_zz = Xz_[1]; // zz = z_dot
             double yaw = Xa_[0];
 
-            // --- Simplified Motion Model ---
-            Xx_[0] = prev_x + prev_xx * dt + 0.5 * dt * dt * (u_x * cos(yaw) - u_y * sin(yaw));
-            Xx_[1] = prev_xx + dt * (u_x * cos(yaw) - u_y * sin(yaw));
-            Xy_[0] = prev_y + prev_yy * dt - 0.5 * dt * dt * (u_x * sin(yaw) + u_y * cos(yaw));
-            Xy_[1] = prev_yy - dt * (u_x * sin(yaw) + u_y * cos(yaw));
-            Xz_[0] = prev_z + prev_zz * dt + 0.5 * dt * dt * (u_z - G);
-            Xz_[1] = prev_zz + dt * (u_z - G);
-            Xa_[0] = yaw + dt * u_a;
-            Xa_[1] = u_a;
+            // --- Simplified Motion Model -> to derive EKF prediction formulas ---
+            // Xx_[0] = prev_x + prev_xx * dt + 0.5 * dt * dt * (u_x * cos(yaw) - u_y * sin(yaw)); // x_k|k-1
+            // Xx_[1] = prev_xx + dt * (u_x * cos(yaw) - u_y * sin(yaw)); // x_dot_k|k-1
+            // Xy_[0] = prev_y + prev_yy * dt - 0.5 * dt * dt * (u_x * sin(yaw) + u_y * cos(yaw)); // y_k|k-1
+            // Xy_[1] = prev_yy - dt * (u_x * sin(yaw) + u_y * cos(yaw)); // y_dot_k|k-1
+            // Xz_[0] = prev_z + prev_zz * dt + 0.5 * dt * dt * (u_z - G); // z_k|k-1
+            // Xz_[1] = prev_zz + dt * (u_z - G); // z_dot_k|k-1
+            // Xa_[0] = yaw + dt * u_a; // ψ_k|k-1
+            // Xa_[1] = u_a; // ψ_dot_k|k-1
 
+            // EKF prediction for Xx_
+            Eigen::Vector2d U_x = {u_x, u_y};
+            Eigen::Matrix2d F_x, W_x, Q_x;
+            F_x << 1, dt,
+                   0, 1;
+            W_x << 0.5 * dt * dt * cos(yaw), -0.5 * dt * dt * sin(yaw),
+                        dt * cos(yaw),              -dt * sin(yaw);
+            Q_x << params_.var_imu_x, 0,
+                   0, params_.var_imu_y;
+            Xx_ = F_x * Xx_ + W_x * U_x;
+            Px_ = F_x * Px_ * F_x.transpose() + W_x * Q_x * W_x.transpose();
+
+            // EKF prediction for Xy_
+            Eigen::Vector2d U_y = {u_x, u_y};
+            Eigen::Matrix2d F_y, W_y, Q_y;
+            F_y << 1, dt,
+                   0, 1;
+            W_y << -0.5 * dt * dt * sin(yaw), -0.5 * dt * dt * cos(yaw),
+                        -dt * sin(yaw),              -dt * cos(yaw);
+            Q_y << params_.var_imu_x, 0,
+                   0, params_.var_imu_y;
+            Xy_ = F_y * Xy_ + W_y * U_y;
+            Py_ = F_y * Py_ * F_y.transpose() + W_y * Q_y * W_y.transpose();
+
+            // EKF prediction for Xz_ // TODO: to update for barometer correction
+            Eigen::Matrix2d F_z;
+            Eigen::Vector2d W_z;
+            F_z << 1, dt,
+                   0, 1;
+            W_z << 0.5 * dt * dt,
+                   dt;
+            Xz_ = F_z * Xz_ + W_z * (u_z - G);
+            Pz_ = F_z * Pz_ * F_z.transpose() + W_z * params_.var_imu_z * W_z.transpose();
+
+            // EKF prediction for Xa_
+            Eigen::Matrix2d F_a;
+            Eigen::Vector2d W_a;
+            F_a << 1, 0,
+                   0, 0;
+            W_a << dt,
+                   1;
+            Xa_ = F_a * Xa_ + W_a * u_a;
+            Pa_ = F_a * Pa_ * F_a.transpose() + W_a * params_.var_imu_a * W_a.transpose();
 
             // --- EOFIXME ---
         }
