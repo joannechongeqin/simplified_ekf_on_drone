@@ -238,7 +238,7 @@ namespace ee4308::drone
                       << std::setw(7) << std::setprecision(3) << Ybaro_ << ","
                       << std::setw(8) << "---  )"
                       << std::endl;
-            // std::cout << "BBias("
+            //std::cout << "BBias("
             //           << std::setw(8) << "---  ,"
             //           << std::setw(8) << "---  ,"
             //           << std::setw(7) << std::setprecision(3) << Xz_(2) << ","
@@ -416,6 +416,18 @@ namespace ee4308::drone
             //      Required for terminal printing during demonstration.
 
             (void) msg;
+
+            Ybaro_ = msg.point.z;
+            Eigen::Matrix3d new_Pz_, F_z;
+            Eigen::Vector3d W_z, new_Xz_;
+            Eigen::Matrix<double, 1, 2> H_z = {1, 0};
+
+            double h_func = Xz_[0], V_z = 1, R_z = params_.var_baro;
+            double bbias = Ybaro_ - Xz_[0];
+            new_Xz_ << Xz_[0],
+                       Xz_[1],
+                       bbias;
+
 
             // --- FIXME ---
             // Ybaro_ = ...
