@@ -70,17 +70,17 @@ namespace ee4308::drone
         rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_gt_vel_;
         rclcpp::TimerBase::SharedPtr looper_;
 
-        Eigen::Vector2d Xx_ = {0, 0}, Xy_ = {0, 0}, Xa_ = {0, 0};
-        Eigen::Matrix2d Px_ = Eigen::Matrix2d::Constant(1e3),
-                        Py_ = Eigen::Matrix2d::Constant(1e3),
-                        Pa_ = Eigen::Matrix2d::Constant(1e3);
-        //              Pz_ = Eigen::Matrix2d::Constant(1e3);
-
         // Eigen::Vector2d Xx_ = {0, 0}, Xy_ = {0, 0}, Xa_ = {0, 0};
-        Eigen::Vector3d Xz_ = {0, 0, 0};
         // Eigen::Matrix2d Px_ = Eigen::Matrix2d::Constant(1e3),
         //                 Py_ = Eigen::Matrix2d::Constant(1e3),
         //                 Pa_ = Eigen::Matrix2d::Constant(1e3);
+        //              Pz_ = Eigen::Matrix2d::Constant(1e3);
+
+        Eigen::Vector2d Xx_ = {0, 0}, Xy_ = {0, 0}, Xa_ = {0, 0};
+        Eigen::Vector3d Xz_ = {0, 0, 0};
+        Eigen::Matrix2d Px_ = Eigen::Matrix2d::Constant(1e3),
+                        Py_ = Eigen::Matrix2d::Constant(1e3),
+                        Pa_ = Eigen::Matrix2d::Constant(1e3);
         Eigen::Matrix3d Pz_ = Eigen::Matrix3d::Constant(1e3);
 
         Eigen::Vector3d initial_ECEF_ = {NAN, NAN, NAN};
@@ -418,6 +418,12 @@ namespace ee4308::drone
             (void) msg;
 
             Ybaro_ = msg.point.z;
+
+            // --- FIXME ---
+            // Ybaro_ = ...
+            // Correct z
+            // params_.var_baro
+            
             Eigen::Matrix3d F_z;
             Eigen::Vector3d W_z, K_bar;
             Eigen::Matrix<double, 1, 3> H_z = {1, 0, 1}; // include bias
@@ -436,11 +442,6 @@ namespace ee4308::drone
             Pz_ = Pz_ - K_bar * H_z * Pz_;
             Xz_ = Xz_ + K_bar * (Ybaro_ - h_func - Xz_[2]);
             
-
-            // --- FIXME ---
-            // Ybaro_ = ...
-            // Correct z
-            // params_.var_baro
             // --- EOFIXME ---
         }
 
