@@ -70,18 +70,18 @@ namespace ee4308::drone
         rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_gt_vel_;
         rclcpp::TimerBase::SharedPtr looper_;
 
-        Eigen::Vector2d Xx_ = {0, 0}, Xy_ = {0, 0}, Xa_ = {0, 0}, Xz_ = {0, 0};
+        Eigen::Vector2d Xx_ = {0, 0}, Xy_ = {0, 0}, Xa_ = {0, 0};
         Eigen::Matrix2d Px_ = Eigen::Matrix2d::Constant(1e3),
                         Py_ = Eigen::Matrix2d::Constant(1e3),
-                        Pa_ = Eigen::Matrix2d::Constant(1e3),
-                        Pz_ = Eigen::Matrix2d::Constant(1e3);
+                        Pa_ = Eigen::Matrix2d::Constant(1e3);
+        //              Pz_ = Eigen::Matrix2d::Constant(1e3);
 
         // Eigen::Vector2d Xx_ = {0, 0}, Xy_ = {0, 0}, Xa_ = {0, 0};
-        // Eigen::Vector3d Xz_ = {0, 0, 0};
+        Eigen::Vector3d Xz_ = {0, 0, 0};
         // Eigen::Matrix2d Px_ = Eigen::Matrix2d::Constant(1e3),
         //                 Py_ = Eigen::Matrix2d::Constant(1e3),
         //                 Pa_ = Eigen::Matrix2d::Constant(1e3);
-        // Eigen::Matrix3d Pz_ = Eigen::Matrix3d::Constant(1e3);
+        Eigen::Matrix3d Pz_ = Eigen::Matrix3d::Constant(1e3);
 
         Eigen::Vector3d initial_ECEF_ = {NAN, NAN, NAN};
         Eigen::Vector3d initial_;
@@ -238,12 +238,12 @@ namespace ee4308::drone
                       << std::setw(7) << std::setprecision(3) << Ybaro_ << ","
                       << std::setw(8) << "---  )"
                       << std::endl;
-            // std::cout << "BBias("
-            //           << std::setw(8) << "---  ,"
-            //           << std::setw(8) << "---  ,"
-            //           << std::setw(7) << std::setprecision(3) << Xz_(2) << ","
-            //           << std::setw(8) << "---  )"
-            //           << std::endl;
+            std::cout << "BBias("
+                       << std::setw(8) << "---  ,"
+                       << std::setw(8) << "---  ,"
+                       << std::setw(7) << std::setprecision(3) << Xz_(2) << ","
+                       << std::setw(8) << "---  )"
+                       << std::endl;
             std::cout << "Sonar("
                       << std::setw(8) << "---  ,"
                       << std::setw(8) << "---  ,"
@@ -300,6 +300,14 @@ namespace ee4308::drone
             Eigen::Vector3d ECEF;
             // --- FIXME ---
             // params_.rad_polar, params_.rad_equator
+
+            double a = params_.rad_equator, b = params_.rad_polar;
+            double e2 = 1 - (b * b) / (a * a); // square of the first numerical eccentricity
+            double N = a / sqrt(1 - e2 * sin_lat * sin_lat);
+            ECEF[0] = (N + alt) * cos_lat * cos_lon; // x_e
+            ECEF[1] = (N + alt) * cos_lat * sin_lon; // y_e
+            ECEF[2] = (b * b / a * a * N + alt) * sin_lat; // z_e
+
             // --- EOFIXME ---
             return ECEF;
         }
@@ -329,11 +337,38 @@ namespace ee4308::drone
             //      Store the measured x,y,z, in Ygps_.
             //      Required for terminal printing during demonstration.
 
-            // --- FIXME ---
+            // --- FIXME ---          
+
             // get NED
+            Eigen::Vector3d NED;
+            Eigen::Matrix3d R_NED2ECEF; // rotation matrix from NED frame to ECEF frame
+            R_NED2ECEF << -sin_lat * cos_lon, -sin_lon, -cos_lat * cos_lon,
+                          -sin_lat * sin_lon,  cos_lon, -cos_lat * sin_lon,
+                                cos_lat,          0,         -sin_lat;
+            NED = R_NED2ECEF.transpose() * (ECEF - initial_ECEF_);
+
             // get world coords (Ygps_ = ...)
+            Eigen::Matrix3d R_NED2WORLD; // rotation matrix from NED frame to world frame
+            R_NED2WORLD << 0, 1, 0,
+                           1, 0, 0,
+                           0, 0, -1;
+            Ygps_ = R_NED2WORLD * NED + initial_; // measurement
+
             // Correct x y z
             // params_.var_gps_x, ...y, ...z
+            // ----- TODO -----
+            Eigen::Vector2d H_gps = {1, 0}; // Jacobian of the measurement with respect to the robot state
+            double V_gps = 1; // Jacobian of the measurement with respect to raw sensor measurements
+
+            // variances of GPS noise in world frame 
+            double R_gps_x = params_.var_gps_x; 
+            double R_gps_y = params_.var_gps_y;
+            double R_gps_z = params_.var_gps_z;
+
+            // calculate K (kalman gain)
+            // update xyz
+            // update covariance
+
             // --- EOFIXME ---
         }
 
@@ -367,6 +402,19 @@ namespace ee4308::drone
             // !!! Store the measured angle (world frame) in Ymagnet_.
             //      Required for terminal printing during demonstration.
 
+            Eigen::Matrix<double, 1, 2>  H_mgn_a = {1, 0};
+            Eigen::Vector2d K_mgn;
+            double V_mgn_a = 1;
+            double R_mgn_a = params_.var_magnet;
+            double h_mgn_a = Xa_[0];
+
+            Ymagnet_ = limit_angle(atan2(msg.vector.y, msg.vector.x)); //atan2(y, x)
+
+            //EKF Correction
+            K_mgn = Pa_ * H_mgn_a.transpose() * (1 / (H_mgn_a * Pa_ * H_mgn_a.transpose() + V_mgn_a * R_mgn_a * V_mgn_a));
+            Xa_ = Xa_ + K_mgn(Ymagnet_ - h_mgn_a);
+            Pa_ = Pa_ - K_mgn * H_mgn_a * Pa_;
+
             // --- FIXME ---
             // Ymagnet_ = ...
             // Correct yaw
@@ -381,6 +429,26 @@ namespace ee4308::drone
             //      Required for terminal printing during demonstration.
 
             (void) msg;
+
+            Ybaro_ = msg.point.z;
+            Eigen::Matrix3d F_z;
+            Eigen::Vector3d W_z, K_bar;
+            Eigen::Matrix<double, 1, 3> H_z = {1, 0, 1}; // include bias
+
+            double h_func = Xz_[0],
+                   V_z = 1, 
+                   R_z = params_.var_baro;
+
+            //double bbias = Ybaro_ - Xz_[0]; // calculate bias from measurement
+            //new_Xz_ << Xz_[0],
+            //           Xz_[1],
+            //           bbias;
+
+            // EKF Correction
+            K_bar = Pz_ * H_z.transpose() * (1 / (H_z * Pz_ * H_z.transpose() + V_z * R_z * V_z));
+            Pz_ = Pz_ - K_bar * H_z * Pz_;
+            Xz_ = Xz_ + K_bar * (Ybaro_ - h_func - Xz_[2]);
+            
 
             // --- FIXME ---
             // Ybaro_ = ...
@@ -414,6 +482,73 @@ namespace ee4308::drone
             // params._var_imu_x, ...y, ...z, ...a
             // Xx_ = ..., Xy_, Xz_, Xa_
             // Px_, Py_, Pz_, Pa_
+
+            double u_x = msg.linear_acceleration.x; // u_x,k = Measured IMU x acceleration value in robot frame
+            double u_y = msg.linear_acceleration.y; // u_y,k = Measured IMU y acceleration value in robot frame
+            double u_z = msg.linear_acceleration.z; // u_z,k = Measured IMU z acceleration value in robot frame
+            double u_a = msg.angular_velocity.z; // u_ψ,k = Measured IMU ψ velocity value in robot frame
+            double G = params_.G; // acceleration due to gravity
+            double prev_x = Xx_[0], prev_xx = Xx_[1]; // xx = x_dot
+            double prev_y = Xy_[0], prev_yy = Xy_[1]; // yy = y_dot
+            double prev_z = Xz_[0], prev_zz = Xz_[1]; // zz = z_dot
+            double yaw = Xa_[0];
+
+            // --- Simplified Motion Model -> to derive EKF prediction formulas ---
+            // Xx_[0] = prev_x + prev_xx * dt + 0.5 * dt * dt * (u_x * cos(yaw) - u_y * sin(yaw)); // x_k|k-1
+            // Xx_[1] = prev_xx + dt * (u_x * cos(yaw) - u_y * sin(yaw)); // x_dot_k|k-1
+            // Xy_[0] = prev_y + prev_yy * dt - 0.5 * dt * dt * (u_x * sin(yaw) + u_y * cos(yaw)); // y_k|k-1
+            // Xy_[1] = prev_yy - dt * (u_x * sin(yaw) + u_y * cos(yaw)); // y_dot_k|k-1
+            // Xz_[0] = prev_z + prev_zz * dt + 0.5 * dt * dt * (u_z - G); // z_k|k-1
+            // Xz_[1] = prev_zz + dt * (u_z - G); // z_dot_k|k-1
+            // Xa_[0] = yaw + dt * u_a; // ψ_k|k-1
+            // Xa_[1] = u_a; // ψ_dot_k|k-1
+
+            // EKF prediction for Xx_
+            Eigen::Vector2d U_x = {u_x, u_y};
+            Eigen::Matrix2d F_x, W_x, Q_x;
+            F_x << 1, dt,
+                   0, 1;
+            W_x << 0.5 * dt * dt * cos(yaw), -0.5 * dt * dt * sin(yaw),
+                        dt * cos(yaw),              -dt * sin(yaw);
+            Q_x << params_.var_imu_x, 0,
+                   0, params_.var_imu_y;
+            Xx_ = F_x * Xx_ + W_x * U_x;
+            Px_ = F_x * Px_ * F_x.transpose() + W_x * Q_x * W_x.transpose();
+
+            // EKF prediction for Xy_
+            Eigen::Vector2d U_y = {u_x, u_y};
+            Eigen::Matrix2d F_y, W_y, Q_y;
+            F_y << 1, dt,
+                   0, 1;
+            W_y << -0.5 * dt * dt * sin(yaw), -0.5 * dt * dt * cos(yaw),
+                        -dt * sin(yaw),              -dt * cos(yaw);
+            Q_y << params_.var_imu_x, 0,
+                   0, params_.var_imu_y;
+            Xy_ = F_y * Xy_ + W_y * U_y;
+            Py_ = F_y * Py_ * F_y.transpose() + W_y * Q_y * W_y.transpose();
+
+            // EKF prediction for Xz_ // TODO: to update for barometer correction
+            Eigen::Matrix3d F_z;
+            Eigen::Vector3d W_z;
+            F_z << 1, dt, 0,
+                   0, 1, 0,
+                   0, 0, 1;
+            W_z << 0.5 * dt * dt,
+                   dt,
+                   0;
+            Xz_ = F_z * Xz_ + W_z * (u_z - G);
+            Pz_ = F_z * Pz_ * F_z.transpose() + W_z * params_.var_imu_z * W_z.transpose();
+
+            // EKF prediction for Xa_
+            Eigen::Matrix2d F_a;
+            Eigen::Vector2d W_a;
+            F_a << 1, 0,
+                   0, 0;
+            W_a << dt,
+                   1;
+            Xa_ = F_a * Xa_ + W_a * u_a;
+            Pa_ = F_a * Pa_ * F_a.transpose() + W_a * params_.var_imu_a * W_a.transpose();
+
             // --- EOFIXME ---
         }
     };
