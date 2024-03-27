@@ -70,18 +70,18 @@ namespace ee4308::drone
         rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_gt_vel_;
         rclcpp::TimerBase::SharedPtr looper_;
 
-        Eigen::Vector2d Xx_ = {0, 0}, Xy_ = {0, 0}, Xa_ = {0, 0}, Xz_ = {0, 0};
+        Eigen::Vector2d Xx_ = {0, 0}, Xy_ = {0, 0}, Xa_ = {0, 0};
         Eigen::Matrix2d Px_ = Eigen::Matrix2d::Constant(1e3),
                         Py_ = Eigen::Matrix2d::Constant(1e3),
-                        Pa_ = Eigen::Matrix2d::Constant(1e3),
-                        Pz_ = Eigen::Matrix2d::Constant(1e3);
+                        Pa_ = Eigen::Matrix2d::Constant(1e3);
+        //              Pz_ = Eigen::Matrix2d::Constant(1e3);
 
         // Eigen::Vector2d Xx_ = {0, 0}, Xy_ = {0, 0}, Xa_ = {0, 0};
-        // Eigen::Vector3d Xz_ = {0, 0, 0};
+        Eigen::Vector3d Xz_ = {0, 0, 0};
         // Eigen::Matrix2d Px_ = Eigen::Matrix2d::Constant(1e3),
         //                 Py_ = Eigen::Matrix2d::Constant(1e3),
         //                 Pa_ = Eigen::Matrix2d::Constant(1e3);
-        // Eigen::Matrix3d Pz_ = Eigen::Matrix3d::Constant(1e3);
+        Eigen::Matrix3d Pz_ = Eigen::Matrix3d::Constant(1e3);
 
         Eigen::Vector3d initial_ECEF_ = {NAN, NAN, NAN};
         Eigen::Vector3d initial_;
@@ -238,12 +238,12 @@ namespace ee4308::drone
                       << std::setw(7) << std::setprecision(3) << Ybaro_ << ","
                       << std::setw(8) << "---  )"
                       << std::endl;
-            //std::cout << "BBias("
-            //           << std::setw(8) << "---  ,"
-            //           << std::setw(8) << "---  ,"
-            //           << std::setw(7) << std::setprecision(3) << Xz_(2) << ","
-            //           << std::setw(8) << "---  )"
-            //           << std::endl;
+            std::cout << "BBias("
+                       << std::setw(8) << "---  ,"
+                       << std::setw(8) << "---  ,"
+                       << std::setw(7) << std::setprecision(3) << Xz_(2) << ","
+                       << std::setw(8) << "---  )"
+                       << std::endl;
             std::cout << "Sonar("
                       << std::setw(8) << "---  ,"
                       << std::setw(8) << "---  ,"
@@ -418,16 +418,24 @@ namespace ee4308::drone
             (void) msg;
 
             Ybaro_ = msg.point.z;
-            Eigen::Matrix3d new_Pz_, F_z;
-            Eigen::Vector3d W_z, new_Xz_;
-            Eigen::Matrix<double, 1, 2> H_z = {1, 0};
+            Eigen::Matrix3d F_z;
+            Eigen::Vector3d W_z, K_bar;
+            Eigen::Matrix<double, 1, 3> H_z = {1, 0, 1}; // include bias
 
-            double h_func = Xz_[0], V_z = 1, R_z = params_.var_baro;
-            double bbias = Ybaro_ - Xz_[0];
-            new_Xz_ << Xz_[0],
-                       Xz_[1],
-                       bbias;
+            double h_func = Xz_[0],
+                   V_z = 1, 
+                   R_z = params_.var_baro;
 
+            //double bbias = Ybaro_ - Xz_[0]; // calculate bias from measurement
+            //new_Xz_ << Xz_[0],
+            //           Xz_[1],
+            //           bbias;
+
+            // EKF Correction
+            K_bar = Pz_ * H_z.transpose() * (1 / (H_z * Pz_ * H_z.transpose() + V_z * R_z * V_z));
+            Pz_ = Pz_ - K_bar * H_z * Pz_;
+            Xz_ = Xz_ + K_bar * (Ybaro_ - h_func - Xz_[2]);
+            
 
             // --- FIXME ---
             // Ybaro_ = ...
