@@ -515,12 +515,14 @@ namespace ee4308::drone
             Py_ = F_y * Py_ * F_y.transpose() + W_y * Q_y * W_y.transpose();
 
             // EKF prediction for Xz_ // TODO: to update for barometer correction
-            Eigen::Matrix2d F_z;
-            Eigen::Vector2d W_z;
-            F_z << 1, dt,
-                   0, 1;
+            Eigen::Matrix3d F_z;
+            Eigen::Vector3d W_z;
+            F_z << 1, dt, 0,
+                   0, 1, 0,
+                   0, 0, 1;
             W_z << 0.5 * dt * dt,
-                   dt;
+                   dt,
+                   0;
             Xz_ = F_z * Xz_ + W_z * (u_z - G);
             Pz_ = F_z * Pz_ * F_z.transpose() + W_z * params_.var_imu_z * W_z.transpose();
 
