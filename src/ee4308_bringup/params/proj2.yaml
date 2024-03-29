@@ -62,9 +62,9 @@ drone:
       var_imu_y: 0.2
       var_imu_z: 0.2
       var_imu_a: 0.2
-      var_gps_x: 0.2
-      var_gps_y: 0.2
-      var_gps_z: 0.2
+      var_gps_x: 0.04
+      var_gps_y: 0.04
+      var_gps_z: 0.04
       var_baro: 0.2
       var_sonar: 0.2
       var_magnet: 0.2
