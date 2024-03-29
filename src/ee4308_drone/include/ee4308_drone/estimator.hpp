@@ -71,8 +71,11 @@ namespace ee4308::drone
         rclcpp::TimerBase::SharedPtr looper_;
 
         // Eigen::Vector2d Xx_ = {0, 0}, Xy_ = {0, 0}, Xa_ = {0, 0}, Xz_ = {0, 0};
+        // Eigen::Vector2d Xx_ = {0, 0}, Xy_ = {0, 0}, Xa_ = {0, 0}, Xz_ = {0, 0};
         // Eigen::Matrix2d Px_ = Eigen::Matrix2d::Constant(1e3),
         //                 Py_ = Eigen::Matrix2d::Constant(1e3),
+        //                 Pa_ = Eigen::Matrix2d::Constant(1e3),
+        //                 Pz_ = Eigen::Matrix2d::Constant(1e3);
         //                 Pa_ = Eigen::Matrix2d::Constant(1e3),
         //                 Pz_ = Eigen::Matrix2d::Constant(1e3);
 
