@@ -344,10 +344,57 @@ namespace ee4308::drone
             // --- FIXME ---          
 
             // get NED
+            Eigen::Vector3d NED;
+            Eigen::Matrix3d R_NED2ECEF; // rotation matrix from NED frame to ECEF frame
+            R_NED2ECEF << -sin_lat * cos_lon, -sin_lon, -cos_lat * cos_lon,
+                          -sin_lat * sin_lon,  cos_lon, -cos_lat * sin_lon,
+                                cos_lat,          0,         -sin_lat;
+            NED = R_NED2ECEF.transpose() * (ECEF - initial_ECEF_);
+
+            // get world coords (Ygps_ = ...)
+            Eigen::Matrix3d R_NED2WORLD; // rotation matrix from NED frame to world frame
+            R_NED2WORLD << 0, 1, 0,
+                           1, 0, 0,
+                           0, 0, -1;
+            Ygps_ = R_NED2WORLD * NED + initial_; // measurement
+
             // Correct x y z
-            // params_.var_gps_x, ...y, ...z
-            // update xyz
-            // update covariance
+            // params_.var_gps_x, ...y, ...z        
+            // EKF correction for Xx_
+            Eigen::VectorXd Ygps_x(1), hgps_x(1), Vgps_x(1), Rgps_x(1);
+            Eigen::RowVector2d Hgps_x;
+            Ygps_x << Ygps_[0];
+            hgps_x << Xx_[0];
+            Hgps_x << 1, 0;
+            Vgps_x << 1;
+            Rgps_x << params_.var_gps_x;
+            auto Kx = Px_ * Hgps_x.transpose() * (Hgps_x * Px_ * Hgps_x.transpose() + Vgps_x * Rgps_x * Vgps_x).inverse();
+            Xx_ = Xx_ + Kx * (Ygps_x - hgps_x);
+            Px_ = Px_ - Kx * Hgps_x * Px_;
+
+            // EKF correction for Xy_
+            Eigen::VectorXd Ygps_y(1), hgps_y(1), Vgps_y(1), Rgps_y(1);
+            Eigen::RowVector2d Hgps_y;
+            Ygps_y << Ygps_[1];
+            hgps_y << Xy_[0];
+            Hgps_y << 1, 0;
+            Vgps_y << 1;
+            Rgps_y << params_.var_gps_y;
+            auto Ky = Py_ * Hgps_y.transpose() * (Hgps_y * Py_ * Hgps_y.transpose() + Vgps_y * Rgps_y * Vgps_y).inverse();
+            Xy_ = Xy_ + Ky * (Ygps_y - hgps_y);
+            Py_ = Py_ - Ky * Hgps_y * Py_;
+
+            // EKF correction for Xz_
+            Eigen::VectorXd Ygps_z(1), hgps_z(1), Vgps_z(1), Rgps_z(1);
+            Eigen::RowVector3d Hgps_z;
+            Ygps_z << Ygps_[2];
+            hgps_z << Xz_[0];
+            Hgps_z << 1, 0, 0; // IDK IF THIS IS CORRECT HELPPPP
+            Vgps_z << 1;
+            Rgps_z << params_.var_gps_z;
+            auto Kz = Pz_ * Hgps_z.transpose() * (Hgps_z * Pz_ * Hgps_z.transpose() + Vgps_z * Rgps_z * Vgps_z).inverse();
+            Xz_ = Xz_ + Kz * (Ygps_z - hgps_z);
+            Pz_ = Pz_ - Kz * Hgps_z * Pz_;
 
             // --- EOFIXME ---
         }
@@ -456,9 +503,9 @@ namespace ee4308::drone
             double u_z = msg.linear_acceleration.z; // u_z,k = Measured IMU z acceleration value in robot frame
             double u_a = msg.angular_velocity.z; // u_ψ,k = Measured IMU ψ velocity value in robot frame
             double G = params_.G; // acceleration due to gravity
-            double prev_x = Xx_[0], prev_xx = Xx_[1]; // xx = x_dot
-            double prev_y = Xy_[0], prev_yy = Xy_[1]; // yy = y_dot
-            double prev_z = Xz_[0], prev_zz = Xz_[1]; // zz = z_dot
+            // double prev_x = Xx_[0], prev_xx = Xx_[1]; // xx = x_dot
+            // double prev_y = Xy_[0], prev_yy = Xy_[1]; // yy = y_dot
+            // double prev_z = Xz_[0], prev_zz = Xz_[1]; // zz = z_dot
             double yaw = Xa_[0];
 
             // --- Simplified Motion Model -> to derive EKF prediction formulas ---
