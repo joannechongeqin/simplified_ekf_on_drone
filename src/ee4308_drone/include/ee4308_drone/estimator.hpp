@@ -70,11 +70,11 @@ namespace ee4308::drone
         rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_gt_vel_;
         rclcpp::TimerBase::SharedPtr looper_;
 
-        // Eigen::Vector2d Xx_ = {0, 0}, Xy_ = {0, 0}, Xa_ = {0, 0};
+        // Eigen::Vector2d Xx_ = {0, 0}, Xy_ = {0, 0}, Xa_ = {0, 0}, Xz_ = {0, 0};
         // Eigen::Matrix2d Px_ = Eigen::Matrix2d::Constant(1e3),
         //                 Py_ = Eigen::Matrix2d::Constant(1e3),
-        //                 Pa_ = Eigen::Matrix2d::Constant(1e3);
-        //              Pz_ = Eigen::Matrix2d::Constant(1e3);
+        //                 Pa_ = Eigen::Matrix2d::Constant(1e3),
+        //                 Pz_ = Eigen::Matrix2d::Constant(1e3);
 
         Eigen::Vector2d Xx_ = {0, 0}, Xy_ = {0, 0}, Xa_ = {0, 0};
         Eigen::Vector3d Xz_ = {0, 0, 0};
@@ -301,13 +301,6 @@ namespace ee4308::drone
             // --- FIXME ---
             // params_.rad_polar, params_.rad_equator
 
-            double a = params_.rad_equator, b = params_.rad_polar;
-            double e2 = 1 - (b * b) / (a * a); // square of the first numerical eccentricity
-            double N = a / sqrt(1 - e2 * sin_lat * sin_lat);
-            ECEF[0] = (N + alt) * cos_lat * cos_lon; // x_e
-            ECEF[1] = (N + alt) * cos_lat * sin_lon; // y_e
-            ECEF[2] = (b * b / a * a * N + alt) * sin_lat; // z_e
-
             // --- EOFIXME ---
             return ECEF;
         }
@@ -340,32 +333,8 @@ namespace ee4308::drone
             // --- FIXME ---          
 
             // get NED
-            Eigen::Vector3d NED;
-            Eigen::Matrix3d R_NED2ECEF; // rotation matrix from NED frame to ECEF frame
-            R_NED2ECEF << -sin_lat * cos_lon, -sin_lon, -cos_lat * cos_lon,
-                          -sin_lat * sin_lon,  cos_lon, -cos_lat * sin_lon,
-                                cos_lat,          0,         -sin_lat;
-            NED = R_NED2ECEF.transpose() * (ECEF - initial_ECEF_);
-
-            // get world coords (Ygps_ = ...)
-            Eigen::Matrix3d R_NED2WORLD; // rotation matrix from NED frame to world frame
-            R_NED2WORLD << 0, 1, 0,
-                           1, 0, 0,
-                           0, 0, -1;
-            Ygps_ = R_NED2WORLD * NED + initial_; // measurement
-
             // Correct x y z
             // params_.var_gps_x, ...y, ...z
-            // ----- TODO -----
-            Eigen::Vector2d H_gps = {1, 0}; // Jacobian of the measurement with respect to the robot state
-            double V_gps = 1; // Jacobian of the measurement with respect to raw sensor measurements
-
-            // variances of GPS noise in world frame 
-            double R_gps_x = params_.var_gps_x; 
-            double R_gps_y = params_.var_gps_y;
-            double R_gps_z = params_.var_gps_z;
-
-            // calculate K (kalman gain)
             // update xyz
             // update covariance
 
@@ -417,12 +386,14 @@ namespace ee4308::drone
 
             (void) msg;
 
-            Ybaro_ = msg.point.z;
+            
 
             // --- FIXME ---
             // Ybaro_ = ...
             // Correct z
             // params_.var_baro
+
+            Ybaro_ = msg.point.z;
             
             Eigen::Matrix3d F_z;
             Eigen::Vector3d W_z, K_bar;
