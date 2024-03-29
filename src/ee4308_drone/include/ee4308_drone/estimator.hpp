@@ -304,6 +304,14 @@ namespace ee4308::drone
             // --- FIXME ---
             // params_.rad_polar, params_.rad_equator
 
+            double a = params_.rad_equator, b = params_.rad_polar;
+            double a2 = a * a, b2 = b * b;
+            double e2 = 1.0 - b2 / a2; // square of the first numerical eccentricity
+            double N = a / sqrt(1.0 - e2 * sin_lat * sin_lat);
+            ECEF[0] = (N + alt) * cos_lat * cos_lon; // x_e
+            ECEF[1] = (N + alt) * cos_lat * sin_lon; // y_e
+            ECEF[2] = (b2 / a2 * N + alt) * sin_lat; // z_e
+
             // --- EOFIXME ---
             return ECEF;
         }
