@@ -433,6 +433,21 @@ namespace ee4308::drone
             // Ymagnet_ = ...
             // Correct yaw
             // params_.var_magnet
+
+            Eigen::VectorXd Y_mgn_a(1), h_mgn_a(1), V_mgn_a(1), R_mgn_a(1);
+            Eigen::RowVector2d H_mgn_a;
+            Y_mgn_a << limit_angle(atan2(msg.vector.y, msg.vector.x)); //atan2(y, x) // TODO CHECK IF THIS IS CORRECT(?)
+            h_mgn_a << Xa_[0];
+            H_mgn_a << 1, 0;
+            V_mgn_a << 1;
+            R_mgn_a << params_.var_magnet;
+
+            // EKF Correction
+            auto K_mgn = Pa_ * H_mgn_a.transpose() * (H_mgn_a * Pa_ * H_mgn_a.transpose() + V_mgn_a * R_mgn_a * V_mgn_a).inverse();
+            Xa_ = Xa_ + K_mgn * (Y_mgn_a - h_mgn_a);
+            Pa_ = Pa_ - K_mgn * H_mgn_a * Pa_;
+            Ymagnet_ = Y_mgn_a[0];
+
             // --- EOFIXME ---
         }
 
