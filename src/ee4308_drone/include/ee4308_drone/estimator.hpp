@@ -402,23 +402,24 @@ namespace ee4308::drone
             // !!! Store the measured angle (world frame) in Ymagnet_.
             //      Required for terminal printing during demonstration.
 
-            Eigen::Matrix<double, 1, 2>  H_mgn_a = {1, 0};
-            Eigen::Vector2d K_mgn;
-            double V_mgn_a = 1;
-            double R_mgn_a = params_.var_magnet;
-            double h_mgn_a = Xa_[0];
-
-            Ymagnet_ = limit_angle(atan2(msg.vector.y, msg.vector.x)); //atan2(y, x)
-
-            //EKF Correction
-            K_mgn = Pa_ * H_mgn_a.transpose() * (1 / (H_mgn_a * Pa_ * H_mgn_a.transpose() + V_mgn_a * R_mgn_a * V_mgn_a));
-            Xa_ = Xa_ + K_mgn(Ymagnet_ - h_mgn_a);
-            Pa_ = Pa_ - K_mgn * H_mgn_a * Pa_;
-
             // --- FIXME ---
             // Ymagnet_ = ...
             // Correct yaw
             // params_.var_magnet
+            
+            Eigen::VectorXd Y_mgn_a(1), h_mgn_a(1), V_mgn_a(1), R_mgn_a(1);
+            Eigen::RowVector2d H_mgn_a;
+            Y_mgn_a << limit_angle(atan2(msg.vector.y, msg.vector.x)); //atan2(y, x)
+            h_mgn_a << Xa_[0];
+            H_mgn_a << 1, 0;
+            V_mgn_a << 1;
+            R_mgn_a << params_.var_magnet;
+
+            //EKF Correction
+            auto K_mgn = Pa_ * H_mgn_a.transpose() * (H_mgn_a * Pa_ * H_mgn_a.transpose() + V_mgn_a * R_mgn_a * V_mgn_a).inverse();
+            Xa_ = Xa_ + K_mgn * (Y_mgn_a - h_mgn_a);
+            Pa_ = Pa_ - K_mgn * H_mgn_a * Pa_;
+
             // --- EOFIXME ---
         }
 
