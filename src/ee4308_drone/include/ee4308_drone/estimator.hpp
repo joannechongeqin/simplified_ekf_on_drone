@@ -436,7 +436,7 @@ namespace ee4308::drone
 
             Eigen::VectorXd Y_mgn_a(1), h_mgn_a(1), V_mgn_a(1), R_mgn_a(1);
             Eigen::RowVector2d H_mgn_a;
-            Y_mgn_a << limit_angle(atan2(msg.vector.y, msg.vector.x)); //atan2(y, x) // TODO CHECK IF THIS IS CORRECT(?)
+            Y_mgn_a << limit_angle(atan2(-msg.vector.y, msg.vector.x)); //atan2(y, x) // TODO CHECK IF THIS IS CORRECT(?)
             h_mgn_a << Xa_[0];
             H_mgn_a << 1, 0;
             V_mgn_a << 1;
@@ -469,7 +469,7 @@ namespace ee4308::drone
             Eigen::VectorXd Vbar_z(1), Rbar_z(1);
             Vbar_z << 1;
             Rbar_z << params_.var_baro;
-            Eigen::RowVector3d Hbar_z = {1, 0, 1}; // include bias // TODO CHECK CORRECT WAY TO DERIVE H_z
+            Eigen::RowVector3d Hbar_z = {1, 0, 0}; // include bias // TODO CHECK CORRECT WAY TO DERIVE H_z
 
             //double bar_bias = Ybaro_ - Xz_[0];
             //Xz_[2] = bar_bias;
