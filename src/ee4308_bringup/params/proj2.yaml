@@ -58,20 +58,20 @@ drone:
         gt_vel: "gt_vel"
       frequency: 10.0
       G: 9.8
-      var_imu_x: 0.2
-      var_imu_y: 0.2
-      var_imu_z: 0.2
-      var_imu_a: 0.2
-      var_gps_x: 0.2
-      var_gps_y: 0.2
-      var_gps_z: 0.2
+      var_imu_x: 0.2  # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
+      var_imu_y: 0.2  # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
+      var_imu_z: 0.2  # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
+      var_imu_a: 0.2  # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
+      var_gps_x: 0.04
+      var_gps_y: 0.04
+      var_gps_z: 0.04
       var_baro: 0.2
       var_sonar: 0.2
       var_magnet: 0.2
       rad_polar: 6356752.3
       rad_equator: 6378137.0
       keep_old_sonar: 0.5
-      use_gt: true
+      use_gt: false # set to false
       verbose: true
       use_sim_time: true
 
