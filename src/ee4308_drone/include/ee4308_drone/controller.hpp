@@ -324,12 +324,13 @@ namespace ee4308::drone
                 double diff_y = path_y - drone_y;
                 double diff_z = path_z - drone_z;
                 double distance = sqrt(pow(diff_x, 2) + pow(diff_y, 2) + pow(diff_z, 2));
-                if (distance > lookahead_thres){
+                
+                if (distance > lookahead_thres) {
                     lookahead_.point = plan[i].pose.position;
-                    continue;
+                    return;
                 }
-                lookahead_.point = plan.back().pose.position; // No points found -> lookahead = desired waypoint
             }
+            lookahead_.point = plan.back().pose.position; // No points found -> lookahead = desired waypoint
             // --- EOFIXME ---
         }
 
