@@ -357,7 +357,7 @@ namespace ee4308::drone
 
             // Desired horizontal & vertical command linear velocities
             double d_horz = params_.kp_horz * sqrt(pow(lookahead_rbtx, 2) + pow(lookahead_rbty, 2));
-            double d_vert = params_.kp_vert * dz;
+            double d_vert = params_.kp_vert * lookahead_rbtz;
 
             // Previous horizontal & vertical command linear velocities
             double prev_x = cmd_vel_.linear.x;
@@ -371,7 +371,8 @@ namespace ee4308::drone
             // Constraining accelerations
             double new_horz_acc = (d_horz - horz_prev) / elapsed_;
             double new_vert_acc = (d_vert - vert_prev) / elapsed_;
-            std::cout << new_horz_acc << ";" << new_vert_acc << std::endl;
+            std::cout << "Before constraints, horz_acc:" << new_horz_acc << "; vert_acc:" << new_vert_acc << std::endl;
+            std::cout << "      desired_horz_vel:" << d_horz << "; desired_vert_vel:" << d_vert << std::endl;
             
             if (abs(new_horz_acc) >= params_.max_horz_acc)
                 new_horz_acc = params_.max_horz_acc * sgn(new_horz_acc);
@@ -393,6 +394,10 @@ namespace ee4308::drone
             cmd_vel_.linear.y = new_horz_vel * (lookahead_rbty / sqrt(pow(lookahead_rbtx, 2) + pow(lookahead_rbty, 2)));
             cmd_vel_.linear.z = new_vert_vel;
             cmd_vel_.angular.z = params_.yaw_vel;
+
+            std::cout << "After constraints, horz_vel:" << new_horz_vel << "; vert_vel:" << new_vert_vel << std::endl;    
+            std::cout << "      x_vel:" << cmd_vel_.linear.x << "; y_vel:" << cmd_vel_.linear.y << "; z_vel:" << cmd_vel_.linear.z << "; yaw_vel:" << cmd_vel_.angular.z << std::endl;
+
             // --- EOFIXME ---
         }
     };
