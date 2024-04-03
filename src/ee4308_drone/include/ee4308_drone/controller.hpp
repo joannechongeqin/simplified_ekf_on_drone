@@ -309,14 +309,15 @@ namespace ee4308::drone
         void getLookahead(const geometry_msgs::msg::Pose &drone_pose)
         {
             // Get a thread-safe copy of the plan. A more efficient way is to use a lock guard here and use the plan directly without copying.
-            std::vector<geometry_msgs::msg::PoseStamped> plan = getPlan();
+            // std::vector<geometry_msgs::msg::PoseStamped> plan = getPlan();
+            const std::lock_guard<std::mutex> lock(mutex_plan_);
 
             // --- FIXME ---
             double lookahead_thres = params_.lookahead_distance;
-            for (size_t i = 1; i < plan.size(); ++i){
-                double path_x = plan[i].pose.position.x;
-                double path_y = plan[i].pose.position.y;
-                double path_z = plan[i].pose.position.z;
+            for (size_t i = 1; i < plan_.size(); ++i){
+                double path_x = plan_[i].pose.position.x;
+                double path_y = plan_[i].pose.position.y;
+                double path_z = plan_[i].pose.position.z;
                 double drone_x = drone_pose.position.x;
                 double drone_y = drone_pose.position.y;
                 double drone_z = drone_pose.position.z;
@@ -326,11 +327,11 @@ namespace ee4308::drone
                 double distance = sqrt(pow(diff_x, 2) + pow(diff_y, 2) + pow(diff_z, 2));
                 
                 if (distance > lookahead_thres) {
-                    lookahead_.point = plan[i].pose.position;
+                    lookahead_.point = plan_[i].pose.position;
                     return;
                 }
             }
-            lookahead_.point = plan.back().pose.position; // No points found -> lookahead = desired waypoint
+            lookahead_.point = plan_.back().pose.position; // No points found -> lookahead = desired waypoint
             // --- EOFIXME ---
         }
 
