@@ -419,6 +419,26 @@ namespace ee4308::drone
         }
 
         // ================================ Magnetic sub callback / EKF Correction ========================================
+        std::vector<double> y_list;
+        double init_count = 0;
+        double y_var = 0;
+
+        double diffSquared(double val, double mean){
+            double res = pow((val-mean), 2);
+            return res;
+        }
+
+        double variance_calc(const std::vector<double>& y_list){
+            double var_sum = 0;
+            double sum = std::accumulate(y_list.begin(), y_list.end(), 0.0);
+            double mean = sum/(y_list.size());
+            
+            for(const double& val : y_list){
+                var_sum += pow((val-mean), 2);
+            }
+
+            return var_sum/(y_list.size() - 1);
+        }
         void correctFromMagnetic(const geometry_msgs::msg::Vector3Stamped msg)
         {
             // Along the horizontal plane, the magnetic north in Gazebo points towards +x, when it should point to +y. It is a bug.
@@ -437,6 +457,19 @@ namespace ee4308::drone
             Eigen::VectorXd Y_mgn_a(1), h_mgn_a(1), V_mgn_a(1), R_mgn_a(1);
             Eigen::RowVector2d H_mgn_a;
             Y_mgn_a << limit_angle(atan2(-msg.vector.y, msg.vector.x)); //atan2(y, x) // TODO CHECK IF THIS IS CORRECT(?)
+
+            // Code to check for the variance value
+            // if (init_count >= 100){
+            //     y_var = variance_calc(y_list);
+            //     std::cout << "Variance of magnetometer is: " << y_var << std::endl;
+            //     y_list.clear();
+            //     init_count = 0;
+            // }
+            // else{
+            //     y_list.push_back(Y_mgn_a[0]);
+            //     init_count++;
+            // }
+
             h_mgn_a << Xa_[0];
             H_mgn_a << 1, 0;
             V_mgn_a << 1;
