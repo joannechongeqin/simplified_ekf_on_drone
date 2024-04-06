@@ -24,7 +24,7 @@ drone:
         cmd_vel: "cmd_vel"
         lookahead: "lookahead"
       frame_id: "/world"
-      lookahead_distance: 1.0
+      lookahead_distance: 0.75  # initial 1.0
       kp_horz: 0.5
       kp_vert: 0.5
       max_horz_vel: 1.0
@@ -71,7 +71,7 @@ drone:
       rad_polar: 6356752.3
       rad_equator: 6378137.0
       keep_old_sonar: 0.5
-      use_gt: false # set to false
+      use_gt: true # set to false
       verbose: true
       use_sim_time: true
 

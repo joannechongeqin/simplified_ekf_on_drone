@@ -146,7 +146,7 @@ namespace ee4308::drone
             double dy = goal.pose.position.y - start.pose.position.y;
             double dz = goal.pose.position.z - start.pose.position.z;
             double dist = sqrt(dx*dx + dy*dy + dz*dz);
-            int num_points = dist / (params_.average_vel * params_.interval); // total distance / distance per time step interval
+            int num_points =  std::floor(dist / (params_.average_vel * params_.interval)); // total distance / distance per time step interval
             // std::cout << num_points << std::endl;
 
             dx = dx / num_points;
