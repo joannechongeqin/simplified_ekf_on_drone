@@ -71,7 +71,7 @@ drone:
       rad_polar: 6356752.3
       rad_equator: 6378137.0
       keep_old_sonar: 0.5
-      use_gt: true # set to false
+      use_gt: false # set to false
       verbose: true
       use_sim_time: true
 
