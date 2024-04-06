@@ -130,7 +130,9 @@ namespace ee4308::drone
         nav_msgs::msg::Path smooth(const geometry_msgs::msg::PoseStamped &start, const geometry_msgs::msg::PoseStamped &goal)
         {
             // odom_drone_; // use odom_drone_ to get the estimated odometry of the drone.
-            
+            std::vector<double> directionVector = {(goal.pose.position.x - start.pose.position.x), (goal.pose.position.y - start.pose.position.y), (goal.pose.position.z - start.pose.position.z)};
+            double pathLength;
+            int numPoints;
             nav_msgs::msg::Path plan;
             // --- FIXME ---
             // params_.interval;
@@ -140,10 +142,23 @@ namespace ee4308::drone
             pose_stamped.pose.position.y = start.pose.position.y; 
             pose_stamped.pose.position.z = start.pose.position.z; 
             plan.poses.push_back(pose_stamped);
+
+            pathLength = sqrt(pow((goal.pose.position.x - start.pose.position.x), 2) + pow((goal.pose.position.y - start.pose.position.y), 2) + pow((goal.pose.position.z - start.pose.position.z), 2));
+            numPoints = pathLength/params_.interval;
+            std::vector<double> unitVector = {directionVector[0]/pathLength, directionVector[1]/pathLength, directionVector[2]/pathLength};
+            
+            for (int i = 0; i < numPoints; i++){
+                pose_stamped.pose.position.x = pose_stamped.pose.position.x + (unitVector[0] * params_.interval);
+                pose_stamped.pose.position.y = pose_stamped.pose.position.y + (unitVector[1] * params_.interval);
+                pose_stamped.pose.position.z = pose_stamped.pose.position.z + (unitVector[2] * params_.interval);
+                plan.poses.push_back(pose_stamped);
+            }
+            
             pose_stamped.pose.position.x = goal.pose.position.x; 
             pose_stamped.pose.position.y = goal.pose.position.y; 
             pose_stamped.pose.position.z = goal.pose.position.z; 
             plan.poses.push_back(pose_stamped);
+            
             // --- EOFIXME ---
             return plan;
         }
