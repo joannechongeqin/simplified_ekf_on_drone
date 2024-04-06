@@ -313,14 +313,31 @@ namespace ee4308::drone
             const std::lock_guard<std::mutex> lock(mutex_plan_);
 
             // --- FIXME ---
+
+            double drone_x = drone_pose.position.x;
+            double drone_y = drone_pose.position.y;
+            double drone_z = drone_pose.position.z;
+            Eigen::Vector3d drone_pos;
+            drone_pos << drone_x, drone_y, drone_z;
+
+            // *** PATH WILL NOT BE UPDATED REGULARLY! only when waypoint changes (ie waypoint is ono moving turtle) ***
+            // 1. find closest point on the path
+            std::vector<double> distances;
+            for (int i = 0; i < plan_.size(); i++) {
+                Eigen::Vector3d path_pos;
+                path_pos << plan_[i].pose.position.x, plan_[i].pose.position.y, plan_[i].pose.position.z;
+                double dist = (drone_pos - path_pos).norm();
+                distances.push_back(dist);
+            }
+            int closest_point_index = std::distance(std::begin(distances), std::min_element(std::begin(distances), std::end(distances)));
+
+            // 2. from the closest point, search along the back of path towards the desired waypoint
+            //    identify the first point that exceeds the lookahead distance
             double lookahead_thres = params_.lookahead_distance;
-            for (size_t i = 1; i < plan_.size(); ++i){
+            for (size_t i = closest_point_index + 1; i < plan_.size(); ++i){
                 double path_x = plan_[i].pose.position.x;
                 double path_y = plan_[i].pose.position.y;
                 double path_z = plan_[i].pose.position.z;
-                double drone_x = drone_pose.position.x;
-                double drone_y = drone_pose.position.y;
-                double drone_z = drone_pose.position.z;
                 double diff_x = path_x - drone_x;
                 double diff_y = path_y - drone_y;
                 double diff_z = path_z - drone_z;
@@ -331,7 +348,8 @@ namespace ee4308::drone
                     return;
                 }
             }
-            lookahead_.point = plan_.back().pose.position; // No points found -> lookahead = desired waypoint
+            // 3. No points found -> lookahead = desired waypoint
+            lookahead_.point = plan_.back().pose.position; 
             // --- EOFIXME ---
         }
 
@@ -351,6 +369,9 @@ namespace ee4308::drone
             // cmd_vel_
             // params_.yaw_vel
             // --- Remove the following code after fixing ---
+
+            // std::cout << "Moving from " << drone_pose.position.x << ", " << drone_pose.position.y << ", " << drone_pose.position.z 
+            //             << " to " << lookahead_.point.x << ", " << lookahead_.point.y << ", " << lookahead_.point.z << std::endl;
 
             // Lookahead point in robot frame
             double lookahead_rbtx = dx * cos(drone_yaw) + dy * sin(drone_yaw);
