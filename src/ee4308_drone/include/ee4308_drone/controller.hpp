@@ -370,8 +370,8 @@ namespace ee4308::drone
             // params_.yaw_vel
             // --- Remove the following code after fixing ---
 
-            std::cout << "Moving from " << drone_pose.position.x << ", " << drone_pose.position.y << ", " << drone_pose.position.z 
-                        << " to " << lookahead_.point.x << ", " << lookahead_.point.y << ", " << lookahead_.point.z << std::endl;
+            // std::cout << "Moving from " << drone_pose.position.x << ", " << drone_pose.position.y << ", " << drone_pose.position.z 
+            //             << " to " << lookahead_.point.x << ", " << lookahead_.point.y << ", " << lookahead_.point.z << std::endl;
 
             // Lookahead point in robot frame
             double lookahead_rbtx = dx * cos(drone_yaw) + dy * sin(drone_yaw);
