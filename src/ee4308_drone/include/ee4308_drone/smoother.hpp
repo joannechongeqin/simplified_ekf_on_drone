@@ -130,36 +130,51 @@ namespace ee4308::drone
         nav_msgs::msg::Path smooth(const geometry_msgs::msg::PoseStamped &start, const geometry_msgs::msg::PoseStamped &goal)
         {
             // odom_drone_; // use odom_drone_ to get the estimated odometry of the drone.
-            std::vector<double> directionVector = {(goal.pose.position.x - start.pose.position.x), (goal.pose.position.y - start.pose.position.y), (goal.pose.position.z - start.pose.position.z)};
-            double pathLength;
-            int numPoints;
+
+            // std::cout << "odom_drone_: " << odom_drone_.pose.pose.position.x << ", " << odom_drone_.pose.pose.position.y << ", " << odom_drone_.pose.pose.position.z << std::endl;
+            // std::cout << "start: " << start.pose.position.x << ", " << start.pose.position.y << ", " << start.pose.position.z << std::endl;
+            // ^ seems like they are the same 
+
             nav_msgs::msg::Path plan;
             // --- FIXME ---
             // params_.interval;
             // --- Remove the following code after fixing ---
             geometry_msgs::msg::PoseStamped pose_stamped;
-            pose_stamped.pose.position.x = start.pose.position.x; 
-            pose_stamped.pose.position.y = start.pose.position.y; 
-            pose_stamped.pose.position.z = start.pose.position.z; 
-            plan.poses.push_back(pose_stamped);
-
-            pathLength = sqrt(pow((goal.pose.position.x - start.pose.position.x), 2) + pow((goal.pose.position.y - start.pose.position.y), 2) + pow((goal.pose.position.z - start.pose.position.z), 2));
-            numPoints = pathLength/(params_.average_vel * params_.interval);
-            std::vector<double> unitVector = {directionVector[0]/pathLength, directionVector[1]/pathLength, directionVector[2]/pathLength};
             
-            for (int i = 0; i < numPoints; i++){
-                pose_stamped.pose.position.x = pose_stamped.pose.position.x + (unitVector[0] * params_.interval);
-                pose_stamped.pose.position.y = pose_stamped.pose.position.y + (unitVector[1] * params_.interval);
-                pose_stamped.pose.position.z = pose_stamped.pose.position.z + (unitVector[2] * params_.interval);
+            // interpolate straight line points at regular interval
+            double dx = goal.pose.position.x - start.pose.position.x;
+            double dy = goal.pose.position.y - start.pose.position.y;
+            double dz = goal.pose.position.z - start.pose.position.z;
+            double dist = sqrt(dx*dx + dy*dy + dz*dz);
+            int num_points = dist / (params_.average_vel * params_.interval); // total distance / distance per time step interval
+            // std::cout << num_points << std::endl;
+
+            dx = dx / num_points;
+            dy = dy / num_points;
+            dz = dz / num_points;
+            for (int i = 0; i < num_points; i++) {
+                pose_stamped.pose.position.x = start.pose.position.x + i * dx;
+                pose_stamped.pose.position.y = start.pose.position.y + i * dy;
+                pose_stamped.pose.position.z = start.pose.position.z + i * dz;
                 plan.poses.push_back(pose_stamped);
             }
             
+            // add goal point to final plan
+
             pose_stamped.pose.position.x = goal.pose.position.x; 
             pose_stamped.pose.position.y = goal.pose.position.y; 
             pose_stamped.pose.position.z = goal.pose.position.z; 
             plan.poses.push_back(pose_stamped);
+
+            // print plan
+            // std::cout << "plan from " << start.pose.position.x << ", " << start.pose.position.y << ", " << start.pose.position.z 
+            //                 << " to " << goal.pose.position.x << ", " << goal.pose.position.y << ", " << goal.pose.position.z << std::endl;
+            // for (auto &pose : plan.poses) {
+            //     std::cout << pose.pose.position.x << ", " << pose.pose.position.y << ", " << pose.pose.position.z << std::endl;
+            // }
             
             // --- EOFIXME ---
+
             return plan;
         }
     };
