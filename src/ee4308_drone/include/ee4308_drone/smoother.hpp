@@ -144,7 +144,7 @@ namespace ee4308::drone
             plan.poses.push_back(pose_stamped);
 
             pathLength = sqrt(pow((goal.pose.position.x - start.pose.position.x), 2) + pow((goal.pose.position.y - start.pose.position.y), 2) + pow((goal.pose.position.z - start.pose.position.z), 2));
-            numPoints = pathLength/params_.interval;
+            numPoints = pathLength/(params_.average_vel * params_.interval);
             std::vector<double> unitVector = {directionVector[0]/pathLength, directionVector[1]/pathLength, directionVector[2]/pathLength};
             
             for (int i = 0; i < numPoints; i++){
