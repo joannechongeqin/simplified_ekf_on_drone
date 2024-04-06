@@ -493,16 +493,16 @@ namespace ee4308::drone
             Y_mgn_a << limit_angle(atan2(-msg.vector.y, msg.vector.x)); //atan2(y, x) // TODO CHECK IF THIS IS CORRECT(?)
 
             // Code to check for the variance value
-            if (mag_init_count >= 100){
-                mag_y_var = variance_calc(mag_y_list);
-                std::cout << "Variance of magnetometer is: " << mag_y_var << std::endl;
-                mag_y_list.clear();
-                mag_init_count = 0;
-            }
-            else{
-                mag_y_list.push_back(Y_mgn_a[0]);
-                mag_init_count++;
-            }
+            // if (mag_init_count >= 100){
+            //     mag_y_var = variance_calc(mag_y_list);
+            //     std::cout << "Variance of magnetometer is: " << mag_y_var << std::endl;
+            //     mag_y_list.clear();
+            //     mag_init_count = 0;
+            // }
+            // else{
+            //     mag_y_list.push_back(Y_mgn_a[0]);
+            //     mag_init_count++;
+            // }    
 
             h_mgn_a << Xa_[0];
             H_mgn_a << 1, 0;
