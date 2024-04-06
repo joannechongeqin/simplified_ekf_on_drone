@@ -48,7 +48,7 @@ namespace ee4308::drone
         double var_magnet = 0.1;
         double rad_polar = 6356752.3;
         double rad_equator = 6378137;
-        double keep_old_sonar = 0.5;
+        double keep_old_sonar = 0.5; // this value will need to be updated according to the aplha value in a low pass filter
         bool verbose = true;
         bool use_gt = false;
     };
@@ -400,6 +400,22 @@ namespace ee4308::drone
         }
 
         // ================================ Sonar sub callback / EKF Correction ========================================
+
+        Eigen::VectorXd h_sonar(Eigen::VectorXd Xz_) {
+            Eigen::VectorXd h(1);
+            h << Xz_(0); // Assuming the first element of Xz_ is the vertical position
+            return h;
+        }
+
+        // Sonar Measurement Jacobian
+        Eigen::MatrixXd H_sonar() {
+            Eigen::MatrixXd H(1, Xz_.size());
+            H.setZero();
+            H(0, 0) = 1; // Derivative of the vertical position with respect to itself is 1
+            return H;
+        }
+
+
         void correctFromSonar(const sensor_msgs::msg::Range msg)
         {
             // !!! Store the measured sonar range in Ysonar_.
@@ -411,11 +427,28 @@ namespace ee4308::drone
                 return;
             }
 
-            // --- FIXME ---
-            // Ysonar_ = ...
-            // Correct z
-            // params_.var_sonar
-            // --- EOFIXME ---
+        // Low-pass filter parameters
+        const double alpha = params_.keep_old_sonar; // Exponential forgetting factor. Close to 1: more weight to older measurements.
+
+        // Apply low-pass filter to smooth the sonar measurements
+        Ysonar_ = alpha * Ysonar_ + (1 - alpha) * new_Ysonar; // Smoothed measurement
+
+        // Sonar measurement noise variance
+        double var_sonar = params_.var_sonar;
+
+        // Measurement vector with the smoothed value
+        Eigen::VectorXd Y_sonar(1);
+        Y_sonar << Ysonar_; // Use the smoothed sonar measurement
+
+        // Calculate the Kalman Gain
+        Eigen::MatrixXd H = H_sonar();
+        Eigen::MatrixXd S = H * Pz_ * H.transpose() + var_sonar * Eigen::MatrixXd::Identity(1, 1);
+        Eigen::MatrixXd K = Pz_ * H.transpose() * S.inverse();
+
+        // Update state estimate and covariance matrix using the smoothed measurement
+        Eigen::VectorXd z_pred = h_sonar(Xz_);
+        Xz_ = Xz_ + K * (Y_sonar - z_pred);
+        Pz_ = Pz_ - K * H * Pz_;
         }
 
         // ================================ Magnetic sub callback / EKF Correction ========================================
