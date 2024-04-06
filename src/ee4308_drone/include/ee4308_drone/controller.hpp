@@ -323,12 +323,17 @@ namespace ee4308::drone
             // *** PATH WILL NOT BE UPDATED REGULARLY! only when waypoint changes (ie waypoint is ono moving turtle) ***
 
             // 1. find closest point on the path
-            std::vector<double> distances; // keep track of all distancese from drone to all points in path
+            double closest_point_index;
+            double min_distance = std::numeric_limits<double>::max();
             for (int i = 0; i < plan_.size(); i++) {
                 double distance = getDronePosToPathPosDistance(drone_pose, plan_[i]);
-                distances.push_back(distance);
+                // std::cout << "distance:" << distance << std::endl;
+                if (distance < min_distance) {
+                    min_distance = distance;
+                    closest_point_index = i;
+                }
             }
-            int closest_point_index = std::distance(std::begin(distances), std::min_element(std::begin(distances), std::end(distances)));
+            // std::cout << "closest_point_index:" << closest_point_index << std::endl;
 
             // 2. from the closest point, search along the back of path towards the desired waypoint
             //    identify the first point that exceeds the lookahead distance
@@ -387,8 +392,8 @@ namespace ee4308::drone
             // Constraining accelerations
             double new_horz_acc = (d_horz - horz_prev) / elapsed_;
             double new_vert_acc = (d_vert - vert_prev) / elapsed_;
-            std::cout << "Before constraints, horz_acc:" << new_horz_acc << "; vert_acc:" << new_vert_acc << std::endl;
-            std::cout << "      desired_horz_vel:" << d_horz << "; desired_vert_vel:" << d_vert << std::endl;
+            // std::cout << "Before constraints, horz_acc:" << new_horz_acc << "; vert_acc:" << new_vert_acc << std::endl;
+            // std::cout << "      desired_horz_vel:" << d_horz << "; desired_vert_vel:" << d_vert << std::endl;
             
             if (abs(new_horz_acc) >= params_.max_horz_acc)
                 new_horz_acc = params_.max_horz_acc * sgn(new_horz_acc);
@@ -411,8 +416,8 @@ namespace ee4308::drone
             cmd_vel_.linear.z = new_vert_vel;
             cmd_vel_.angular.z = params_.yaw_vel;
 
-            std::cout << "After constraints, horz_vel:" << new_horz_vel << "; vert_vel:" << new_vert_vel << std::endl;    
-            std::cout << "      x_vel:" << cmd_vel_.linear.x << "; y_vel:" << cmd_vel_.linear.y << "; z_vel:" << cmd_vel_.linear.z << "; yaw_vel:" << cmd_vel_.angular.z << std::endl;
+            // std::cout << "After constraints, horz_vel:" << new_horz_vel << "; vert_vel:" << new_vert_vel << std::endl;    
+            // std::cout << "      x_vel:" << cmd_vel_.linear.x << "; y_vel:" << cmd_vel_.linear.y << "; z_vel:" << cmd_vel_.linear.z << "; yaw_vel:" << cmd_vel_.angular.z << std::endl;
 
             // --- EOFIXME ---
         }
