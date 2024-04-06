@@ -135,16 +135,55 @@ namespace ee4308::drone
             // --- FIXME ---
             // params_.interval;
             // --- Remove the following code after fixing ---
-            geometry_msgs::msg::PoseStamped pose_stamped;
-            pose_stamped.pose.position.x = start.pose.position.x; 
-            pose_stamped.pose.position.y = start.pose.position.y; 
-            pose_stamped.pose.position.z = start.pose.position.z; 
-            plan.poses.push_back(pose_stamped);
-            pose_stamped.pose.position.x = goal.pose.position.x; 
-            pose_stamped.pose.position.y = goal.pose.position.y; 
-            pose_stamped.pose.position.z = goal.pose.position.z; 
-            plan.poses.push_back(pose_stamped);
+            // geometry_msgs::msg::PoseStamped pose_stamped;
+            // pose_stamped.pose.position.x = start.pose.position.x; 
+            // pose_stamped.pose.position.y = start.pose.position.y; 
+            // pose_stamped.pose.position.z = start.pose.position.z; 
+            // plan.poses.push_back(pose_stamped);
+            // pose_stamped.pose.position.x = goal.pose.position.x; 
+            // pose_stamped.pose.position.y = goal.pose.position.y; 
+            // pose_stamped.pose.position.z = goal.pose.position.z; 
+            // plan.poses.push_back(pose_stamped);
             // --- EOFIXME ---
+
+            geometry_msgs::msg::PoseStamped ps;
+            double interval = params_.interval;
+            double start_x = start.pose.position.x;
+            double start_y = start.pose.position.y;
+            double start_z = start.pose.position.z;
+
+            double goal_x = goal.pose.position.x;
+            double goal_y = goal.pose.position.y;
+            double goal_z = goal.pose.position.z;
+
+            double diff_x = goal_x - start_x;
+            double diff_y = goal_y - start_y;
+            double diff_z = goal_z - start_z;
+
+            double total_dist = sqrt(pow(diff_x, 2) + pow(diff_y, 2) + pow(diff_z, 2));
+            int points = round(total_dist / interval);
+
+            double increment_x = diff_x / points;
+            double increment_y = diff_y / points;
+            double increment_z = diff_z / points;
+
+            ps.pose.position.x = start.pose.position.x; 
+            ps.pose.position.y = start.pose.position.y; 
+            ps.pose.position.z = start.pose.position.z; 
+            plan.poses.push_back(ps);
+
+            for (int i = 0; i < points; ++i){
+                ps.pose.position.x += increment_x;
+                ps.pose.position.y += increment_y;
+                ps.pose.position.z += increment_z;
+                plan.poses.push_back(ps);
+            }
+
+            ps.pose.position.x = goal.pose.position.x; 
+            ps.pose.position.y = goal.pose.position.y; 
+            ps.pose.position.z = goal.pose.position.z; 
+            plan.poses.push_back(ps);
+            
             return plan;
         }
     };
