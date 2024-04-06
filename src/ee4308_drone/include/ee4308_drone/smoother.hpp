@@ -134,17 +134,46 @@ namespace ee4308::drone
             nav_msgs::msg::Path plan;
             // --- FIXME ---
             // params_.interval;
+
             // --- Remove the following code after fixing ---
-            geometry_msgs::msg::PoseStamped pose_stamped;
-            pose_stamped.pose.position.x = start.pose.position.x; 
-            pose_stamped.pose.position.y = start.pose.position.y; 
-            pose_stamped.pose.position.z = start.pose.position.z; 
-            plan.poses.push_back(pose_stamped);
-            pose_stamped.pose.position.x = goal.pose.position.x; 
-            pose_stamped.pose.position.y = goal.pose.position.y; 
-            pose_stamped.pose.position.z = goal.pose.position.z; 
-            plan.poses.push_back(pose_stamped);
-            // --- EOFIXME ---
+            // geometry_msgs::msg::PoseStamped pose_stamped;
+            // pose_stamped.pose.position.x = start.pose.position.x; 
+            // pose_stamped.pose.position.y = start.pose.position.y; 
+            // pose_stamped.pose.position.z = start.pose.position.z; 
+            // plan.poses.push_back(pose_stamped);
+            // pose_stamped.pose.position.x = goal.pose.position.x; 
+            // pose_stamped.pose.position.y = goal.pose.position.y; 
+            // pose_stamped.pose.position.z = goal.pose.position.z; 
+            // plan.poses.push_back(pose_stamped);
+            // // --- EOFIXME ---
+
+            geometry_msgs::msg::PoseStamped ps; // new interpolated point
+            double interval = params_.interval;
+            double start_x = start.pose.position.x;
+            double start_y = start.pose.position.y; 
+            double start_z = start.pose.position.z; 
+            double goal_x = goal.pose.position.x;
+            double goal_y = goal.pose.position.y;
+            double goal_z = goal.pose.position.z;
+
+            ps.pose.position.x = start.pose.position.x;
+            ps.pose.position.y = start.pose.position.y;
+            ps.pose.position.z = start.pose.position.z;
+            plan.poses.push_back(ps);
+            
+            double diff_x = abs(start_x - goal_x);
+            double diff_y = abs(start_y - goal_y);
+            double diff_z = abs(start_z - goal_z);
+            double distance = sqrt(pow(diff_x, 2) + pow(diff_y, 2) + pow(diff_z, 2));
+            int num_points = round(distance / interval);
+            double dim_dist = interval / sqrt(3);
+            for (int i = 0; i < num_points; ++i){
+                ps.pose.position.x += dim_dist;
+                ps.pose.position.y += dim_dist;
+                ps.pose.position.z += dim_dist;
+
+                plan.poses.push_back(ps);
+            }
             return plan;
         }
     };
