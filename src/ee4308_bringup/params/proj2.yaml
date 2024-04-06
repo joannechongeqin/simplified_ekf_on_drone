@@ -67,7 +67,7 @@ drone:
       var_gps_z: 0.04
       var_baro: 0.2
       var_sonar: 0.2
-      var_magnet: 0.2
+      var_magnet: 0.001
       rad_polar: 6356752.3
       rad_equator: 6378137.0
       keep_old_sonar: 0.5

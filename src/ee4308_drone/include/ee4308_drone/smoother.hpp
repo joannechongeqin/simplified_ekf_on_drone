@@ -130,6 +130,7 @@ namespace ee4308::drone
         nav_msgs::msg::Path smooth(const geometry_msgs::msg::PoseStamped &start, const geometry_msgs::msg::PoseStamped &goal)
         {
             // odom_drone_; // use odom_drone_ to get the estimated odometry of the drone.
+
             // std::cout << "odom_drone_: " << odom_drone_.pose.pose.position.x << ", " << odom_drone_.pose.pose.position.y << ", " << odom_drone_.pose.pose.position.z << std::endl;
             // std::cout << "start: " << start.pose.position.x << ", " << start.pose.position.y << ", " << start.pose.position.z << std::endl;
             // ^ seems like they are the same 
@@ -159,6 +160,7 @@ namespace ee4308::drone
             }
             
             // add goal point to final plan
+
             pose_stamped.pose.position.x = goal.pose.position.x; 
             pose_stamped.pose.position.y = goal.pose.position.y; 
             pose_stamped.pose.position.z = goal.pose.position.z; 
