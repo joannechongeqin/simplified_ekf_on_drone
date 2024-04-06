@@ -62,12 +62,12 @@ drone:
       var_imu_y: 0.2  # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
       var_imu_z: 0.2  # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
       var_imu_a: 0.2  # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
-      var_gps_x: 0.04
-      var_gps_y: 0.04
-      var_gps_z: 0.04
+      var_gps_x: 0.04  # constant obtained from /drone/gps topic
+      var_gps_y: 0.04  # constant obtained from /drone/gps topic
+      var_gps_z: 0.04  # constant obtained from /drone/gps topic
       var_baro: 0.2
       var_sonar: 0.2
-      var_magnet: 0.001
+      var_magnet: 0.001  # calculated by keeping drone still at the start and sampling 100 datapoint
       rad_polar: 6356752.3
       rad_equator: 6378137.0
       keep_old_sonar: 0.5
