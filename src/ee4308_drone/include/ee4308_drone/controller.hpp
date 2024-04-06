@@ -305,6 +305,12 @@ namespace ee4308::drone
             return true;
         }
 
+        double getDronePosToPathPosDistance(const geometry_msgs::msg::Pose &drone_pose, geometry_msgs::msg::PoseStamped &path_pose) {
+            Eigen::Vector3d drone_pos(drone_pose.position.x, drone_pose.position.y, drone_pose.position.z);
+            Eigen::Vector3d path_pos(path_pose.pose.position.x, path_pose.pose.position.y, path_pose.pose.position.z);
+            return (drone_pos - path_pos).norm();
+        }
+
         /** Gets lookahead */
         void getLookahead(const geometry_msgs::msg::Pose &drone_pose)
         {
@@ -314,42 +320,29 @@ namespace ee4308::drone
 
             // --- FIXME ---
 
-            double drone_x = drone_pose.position.x;
-            double drone_y = drone_pose.position.y;
-            double drone_z = drone_pose.position.z;
-            Eigen::Vector3d drone_pos;
-            drone_pos << drone_x, drone_y, drone_z;
-
             // *** PATH WILL NOT BE UPDATED REGULARLY! only when waypoint changes (ie waypoint is ono moving turtle) ***
+
             // 1. find closest point on the path
-            std::vector<double> distances;
+            std::vector<double> distances; // keep track of all distancese from drone to all points in path
             for (int i = 0; i < plan_.size(); i++) {
-                Eigen::Vector3d path_pos;
-                path_pos << plan_[i].pose.position.x, plan_[i].pose.position.y, plan_[i].pose.position.z;
-                double dist = (drone_pos - path_pos).norm();
-                distances.push_back(dist);
+                double distance = getDronePosToPathPosDistance(drone_pose, plan_[i]);
+                distances.push_back(distance);
             }
             int closest_point_index = std::distance(std::begin(distances), std::min_element(std::begin(distances), std::end(distances)));
 
             // 2. from the closest point, search along the back of path towards the desired waypoint
             //    identify the first point that exceeds the lookahead distance
-            double lookahead_thres = params_.lookahead_distance;
-            for (size_t i = closest_point_index + 1; i < plan_.size(); ++i){
-                double path_x = plan_[i].pose.position.x;
-                double path_y = plan_[i].pose.position.y;
-                double path_z = plan_[i].pose.position.z;
-                double diff_x = path_x - drone_x;
-                double diff_y = path_y - drone_y;
-                double diff_z = path_z - drone_z;
-                double distance = sqrt(pow(diff_x, 2) + pow(diff_y, 2) + pow(diff_z, 2));
-                
-                if (distance > lookahead_thres) {
-                    lookahead_.point = plan_[i].pose.position;
+            for (int i = closest_point_index + 1; i < plan_.size(); i++) { // start seraching from the next point after the closest point
+                double distance = getDronePosToPathPosDistance(drone_pose, plan_[i]);
+                if (distance > params_.lookahead_distance) { // first point that exceeds the lookahead distance
+                    lookahead_.point = plan_[i].pose.position; // is the lookahead point
                     return;
                 }
             }
+
             // 3. No points found -> lookahead = desired waypoint
             lookahead_.point = plan_.back().pose.position; 
+            
             // --- EOFIXME ---
         }
 
