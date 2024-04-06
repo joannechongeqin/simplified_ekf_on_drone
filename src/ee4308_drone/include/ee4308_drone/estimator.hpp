@@ -294,6 +294,24 @@ namespace ee4308::drone
             verbose();
         }
 
+        // ================================ Variance Calculation ========================================
+        double diffSquared(double val, double mean){
+            double res = pow((val-mean), 2);
+            return res;
+        }
+
+        double variance_calc(const std::vector<double>& y_list){
+            double var_sum = 0;
+            double sum = std::accumulate(y_list.begin(), y_list.end(), 0.0);
+            double mean = sum/(y_list.size());
+            
+            for(const double& val : y_list){
+                var_sum += pow((val-mean), 2);
+            }
+
+            return var_sum/(y_list.size() - 1);
+        }
+
         // ================================ GPS sub callback / EKF Correction ========================================
         Eigen::Vector3d getECEF(
             const double &sin_lat, const double &cos_lat,
@@ -389,7 +407,7 @@ namespace ee4308::drone
             Eigen::RowVector3d Hgps_z;
             Ygps_z << Ygps_[2];
             hgps_z << Xz_[0];
-            Hgps_z << 1, 0, 0; // IDK IF THIS IS CORRECT HELPPPP
+            Hgps_z << 1, 0, 0;
             Vgps_z << 1;
             Rgps_z << params_.var_gps_z;
             auto Kz = Pz_ * Hgps_z.transpose() * (Hgps_z * Pz_ * Hgps_z.transpose() + Vgps_z * Rgps_z * Vgps_z).inverse();
@@ -414,7 +432,6 @@ namespace ee4308::drone
             H(0, 0) = 1; // Derivative of the vertical position with respect to itself is 1
             return H;
         }
-
 
         void correctFromSonar(const sensor_msgs::msg::Range msg)
         {
@@ -452,26 +469,10 @@ namespace ee4308::drone
         }
 
         // ================================ Magnetic sub callback / EKF Correction ========================================
-        std::vector<double> y_list;
-        double init_count = 0;
-        double y_var = 0;
 
-        double diffSquared(double val, double mean){
-            double res = pow((val-mean), 2);
-            return res;
-        }
-
-        double variance_calc(const std::vector<double>& y_list){
-            double var_sum = 0;
-            double sum = std::accumulate(y_list.begin(), y_list.end(), 0.0);
-            double mean = sum/(y_list.size());
-            
-            for(const double& val : y_list){
-                var_sum += pow((val-mean), 2);
-            }
-
-            return var_sum/(y_list.size() - 1);
-        }
+        std::vector<double> mag_y_list;
+        double mag_init_count = 0;
+        double mag_y_var = 0;
         void correctFromMagnetic(const geometry_msgs::msg::Vector3Stamped msg)
         {
             // Along the horizontal plane, the magnetic north in Gazebo points towards +x, when it should point to +y. It is a bug.
@@ -492,16 +493,16 @@ namespace ee4308::drone
             Y_mgn_a << limit_angle(atan2(-msg.vector.y, msg.vector.x)); //atan2(y, x) // TODO CHECK IF THIS IS CORRECT(?)
 
             // Code to check for the variance value
-            // if (init_count >= 100){
-            //     y_var = variance_calc(y_list);
-            //     std::cout << "Variance of magnetometer is: " << y_var << std::endl;
-            //     y_list.clear();
-            //     init_count = 0;
-            // }
-            // else{
-            //     y_list.push_back(Y_mgn_a[0]);
-            //     init_count++;
-            // }
+            if (mag_init_count >= 100){
+                mag_y_var = variance_calc(mag_y_list);
+                std::cout << "Variance of magnetometer is: " << mag_y_var << std::endl;
+                mag_y_list.clear();
+                mag_init_count = 0;
+            }
+            else{
+                mag_y_list.push_back(Y_mgn_a[0]);
+                mag_init_count++;
+            }
 
             h_mgn_a << Xa_[0];
             H_mgn_a << 1, 0;
