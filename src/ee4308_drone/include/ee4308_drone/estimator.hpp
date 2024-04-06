@@ -469,22 +469,13 @@ namespace ee4308::drone
             Eigen::VectorXd Vbar_z(1), Rbar_z(1);
             Vbar_z << 1;
             Rbar_z << params_.var_baro;
-            Eigen::RowVector3d Hbar_z = {1, 0, 0}; // include bias // TODO CHECK CORRECT WAY TO DERIVE H_z
-
-            //double bar_bias = Ybaro_ - Xz_[0];
-            //Xz_[2] = bar_bias;
-
-            // Eigen::Matrix3d F_z;
+            Eigen::RowVector3d Hbar_z = {1, 0, 1}; // include bias - {1, 0, 0} z position unstable
 
             // EKF Correction
             auto Kbar_z = Pz_ * Hbar_z.transpose() * (Hbar_z * Pz_ * Hbar_z.transpose() + Vbar_z * Rbar_z * Vbar_z).inverse();
             Xz_ = Xz_ + Kbar_z * (Ybaro_ - hbar_z - Xz_[2]);
             Pz_ = Pz_ - Kbar_z * Hbar_z * Pz_;
 
-            // //double bbias = Ybaro_ - Xz_[0]; // calculate bias from measurement
-            // //new_Xz_ << Xz_[0],
-            // //           Xz_[1],
-            // //           bbias;
 
             // // EKF Correction
             // K_bar = Pz_ * H_z.transpose() * (1 / (H_z * Pz_ * H_z.transpose() + V_z * R_z * V_z));

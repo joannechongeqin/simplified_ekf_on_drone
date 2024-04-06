@@ -172,6 +172,7 @@ namespace ee4308::drone
             // }
             
             // --- EOFIXME ---
+
             return plan;
         }
     };
