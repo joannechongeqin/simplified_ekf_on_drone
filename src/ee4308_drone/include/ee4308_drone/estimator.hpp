@@ -467,19 +467,100 @@ namespace ee4308::drone
             // Correct yaw
             // params_.var_magnet
 
-            Eigen::VectorXd Y_mgn_a(1), h_mgn_a(1), V_mgn_a(1), R_mgn_a(1);
-            Eigen::RowVector2d H_mgn_a;
-            Y_mgn_a << limit_angle(atan2(-msg.vector.y, msg.vector.x)); //atan2(y, x) // TODO CHECK IF THIS IS CORRECT(?)
-            h_mgn_a << Xa_[0];
-            H_mgn_a << 1, 0;
-            V_mgn_a << 1;
-            R_mgn_a << params_.var_magnet;
+            // Eigen::VectorXd Y_mgn_a(1), h_mgn_a(1), V_mgn_a(1), R_mgn_a(1);
+            // Eigen::RowVector2d H_mgn_a;
+            // Y_mgn_a << limit_angle(atan2(-msg.vector.y, msg.vector.x)); //atan2(y, x) // TODO CHECK IF THIS IS CORRECT(?)
+            // h_mgn_a << Xa_[0];
+            // H_mgn_a << 1, 0;
+            // V_mgn_a << 1;
+            // R_mgn_a << params_.var_magnet;
 
-            // EKF Correction
-            auto K_mgn = Pa_ * H_mgn_a.transpose() * (H_mgn_a * Pa_ * H_mgn_a.transpose() + V_mgn_a * R_mgn_a * V_mgn_a).inverse();
-            Xa_ = Xa_ + K_mgn * (Y_mgn_a - h_mgn_a);
-            Pa_ = Pa_ - K_mgn * H_mgn_a * Pa_;
-            Ymagnet_ = Y_mgn_a[0];
+            // // EKF Correction
+            // auto K_mgn = Pa_ * H_mgn_a.transpose() * (H_mgn_a * Pa_ * H_mgn_a.transpose() + V_mgn_a * R_mgn_a * V_mgn_a).inverse();
+            // Xa_ = Xa_ + K_mgn * (Y_mgn_a - h_mgn_a);
+            // Pa_ = Pa_ - K_mgn * H_mgn_a * Pa_;
+            // Ymagnet_ = Y_mgn_a[0];
+
+            // Compute the yaw angle from the magnetometer readings
+            double Ymagnet_new = limit_angle(atan2(msg.vector.y, msg.vector.x));
+            
+            // Check the change from the last measurement
+            double change_in_yaw = std::fabs(Ymagnet_new - Ymagnet_);
+            
+            // Define a threshold for detecting unreliable measurements (e.g., 30 degrees)
+            const double UNRELIABLE_YAW_CHANGE_THRESHOLD = 40.0 * M_PI / 180.0;
+
+            // If the change is within the expected range, perform the EKF update
+            if (change_in_yaw < UNRELIABLE_YAW_CHANGE_THRESHOLD)
+            {
+                // Measurement matrix (H) for yaw
+                Eigen::RowVector2d H_mgn_a;
+                H_mgn_a << 1, 0;
+
+                // Measurement noise covariance (R) for yaw
+                Eigen::MatrixXd R_mgn_a(1, 1);
+                R_mgn_a << params_.var_magnet;
+
+                // Kalman gain calculation
+                Eigen::MatrixXd S = H_mgn_a * Pa_ * H_mgn_a.transpose() + R_mgn_a;
+                Eigen::MatrixXd K_mgn = Pa_ * H_mgn_a.transpose() * S.inverse();
+
+                // State update
+                Eigen::VectorXd Y_mgn_a(1);
+                Y_mgn_a << Ymagnet_new;
+
+                Eigen::VectorXd h_mgn_a(1);
+                h_mgn_a << Xa_[0];
+
+                Xa_ = Xa_ + K_mgn * (Y_mgn_a - h_mgn_a);
+                Pa_ = Pa_ - K_mgn * H_mgn_a * Pa_;
+
+                // Update the stored yaw measurement
+                Ymagnet_ = Ymagnet_new;
+            }
+            else
+            {
+                // The measurement is considered unreliable, skip the update
+                std::cout << "Unreliable magnetometer reading detected, skipping EKF update." << std::endl;
+            }
+
+            // double x_mgn = msg.vector.x;
+            // double y_mgn = msg.vector.y;
+
+            // // Convert to yaw angle by ignoring the z component
+            // double Ymagnet = std::atan2(y_mgn, x_mgn);
+
+            // // Ensure the yaw angle is within the range [-pi, pi]
+            // Ymagnet_ = limit_angle(Ymagnet);
+
+            // // Predicted yaw in the world frame from the state estimate
+            // double yaw_predicted = Xa_[0];
+
+            // // Yaw measurement residual (difference between measured yaw and predicted yaw)
+            // double yaw_residual = Ymagnet_ - yaw_predicted;
+
+            // // Ensure the residual is within the range [-pi, pi]
+            // yaw_residual = limit_angle(yaw_residual);
+
+            // // Measurement matrix (H) for yaw
+            // Eigen::RowVector2d H_magnet;
+            // H_magnet << 1, 0; // Only the first state (yaw) is affected
+
+            // // Measurement noise covariance matrix (R) for yaw
+            // Eigen::MatrixXd R_magnet(1, 1);
+            // R_magnet << params_.var_magnet; // Variance of yaw measurement noise
+
+            // // Kalman gain calculation
+            // Eigen::MatrixXd S = H_magnet * Pa_ * H_magnet.transpose() + R_magnet;
+            // Eigen::MatrixXd K = Pa_ * H_magnet.transpose() * S.inverse();
+
+            // // State update
+            // Eigen::Vector2d update;
+            // update << yaw_residual, 0; // Only the yaw state is corrected
+            // Xa_ += K * update;
+
+            // // Covariance update
+            // Pa_ = Pa_ - K * H_magnet * Pa_;
 
             // --- EOFIXME ---
         }
@@ -502,22 +583,13 @@ namespace ee4308::drone
             Eigen::VectorXd Vbar_z(1), Rbar_z(1);
             Vbar_z << 1;
             Rbar_z << params_.var_baro;
-            Eigen::RowVector3d Hbar_z = {1, 0, 0}; // include bias // TODO CHECK CORRECT WAY TO DERIVE H_z
-
-            //double bar_bias = Ybaro_ - Xz_[0];
-            //Xz_[2] = bar_bias;
-
-            // Eigen::Matrix3d F_z;
+            Eigen::RowVector3d Hbar_z = {1, 0, 1}; // include bias - {1, 0, 0} z position unstable
 
             // EKF Correction
             auto Kbar_z = Pz_ * Hbar_z.transpose() * (Hbar_z * Pz_ * Hbar_z.transpose() + Vbar_z * Rbar_z * Vbar_z).inverse();
             Xz_ = Xz_ + Kbar_z * (Ybaro_ - hbar_z - Xz_[2]);
             Pz_ = Pz_ - Kbar_z * Hbar_z * Pz_;
 
-            // //double bbias = Ybaro_ - Xz_[0]; // calculate bias from measurement
-            // //new_Xz_ << Xz_[0],
-            // //           Xz_[1],
-            // //           bbias;
 
             // // EKF Correction
             // K_bar = Pz_ * H_z.transpose() * (1 / (H_z * Pz_ * H_z.transpose() + V_z * R_z * V_z));
