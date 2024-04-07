@@ -473,6 +473,8 @@ namespace ee4308::drone
         std::vector<double> mag_y_list;
         double mag_init_count = 0;
         double mag_y_var = 0;
+        double prev_x = 0;
+        double prev_y = 0;
         void correctFromMagnetic(const geometry_msgs::msg::Vector3Stamped msg)
         {
             // Along the horizontal plane, the magnetic north in Gazebo points towards +x, when it should point to +y. It is a bug.
@@ -513,10 +515,17 @@ namespace ee4308::drone
 
             // EKF Correction
             auto K_mgn = Pa_ * H_mgn_a.transpose() * (H_mgn_a * Pa_ * H_mgn_a.transpose() + V_mgn_a * R_mgn_a * V_mgn_a).inverse();
-            Xa_ = Xa_ + K_mgn * (Y_mgn_a - h_mgn_a);
-            Pa_ = Pa_ - K_mgn * H_mgn_a * Pa_;
+            if ((prev_x == msg.vector.x) && (prev_y == msg.vector.y)){
+                Xa_ = Xa_;
+                Pa_ = Pa_;
+            }
+            else{
+                Xa_ = Xa_ + K_mgn * (Y_mgn_a - h_mgn_a);
+                Pa_ = Pa_ - K_mgn * H_mgn_a * Pa_;
+            }
             Ymagnet_ = Y_mgn_a[0];
-
+            prev_x = msg.vector.x;
+            prev_y = msg.vector.y;
             // --- EOFIXME ---
         }
 
