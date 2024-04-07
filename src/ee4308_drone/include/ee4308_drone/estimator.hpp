@@ -518,6 +518,9 @@ namespace ee4308::drone
             // --- EOFIXME ---
         }
 
+        std::vector<double> baro_list;
+        double baro_init_count = 0;
+        double baro_var = params_.var_baro;
         // ================================ Baro sub callback / EKF Correction ========================================
         void correctFromBaro(const geometry_msgs::msg::PointStamped msg)
         {
@@ -532,10 +535,24 @@ namespace ee4308::drone
             // params_.var_baro
 
             Ybaro_ = msg.point.z;
+
+            // Variance calculation using Ybaro_ samples
+            if (baro_init_count >= 100){
+                baro_var = variance_calc(baro_list);
+                baro_list.clear();
+                baro_init_count = 0;
+            }
+            else {
+                baro_list.push_back(Ybaro_);
+                baro_init_count++;
+            }
+
+            std::cout << "Variance of barometer is: " << baro_var << std::endl;
+
             double hbar_z = Xz_[0];
             Eigen::VectorXd Vbar_z(1), Rbar_z(1);
             Vbar_z << 1;
-            Rbar_z << params_.var_baro;
+            Rbar_z << baro_var;
             Eigen::RowVector3d Hbar_z = {1, 0, 1}; // include bias - {1, 0, 0} z position unstable
 
             // EKF Correction
