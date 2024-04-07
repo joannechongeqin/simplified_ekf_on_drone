@@ -490,7 +490,9 @@ namespace ee4308::drone
 
             Eigen::VectorXd Y_mgn_a(1), h_mgn_a(1), V_mgn_a(1), R_mgn_a(1);
             Eigen::RowVector2d H_mgn_a;
-            Y_mgn_a << limit_angle(atan2(-msg.vector.y, msg.vector.x)); //atan2(y, x) // TODO CHECK IF THIS IS CORRECT(?)
+            double limit_x = limit_angle(msg.vector.x);
+            double limit_y = limit_angle(msg.vector.y);
+            Y_mgn_a << limit_angle(atan2(-limit_y, limit_x)); //atan2(y, x)
 
             // Code to check for the variance value
             // if (mag_init_count >= 100){
@@ -504,7 +506,7 @@ namespace ee4308::drone
             //     mag_init_count++;
             // }    
 
-            h_mgn_a << Xa_[0];
+            h_mgn_a << limit_angle(Xa_[0]);
             H_mgn_a << 1, 0;
             V_mgn_a << 1;
             R_mgn_a << params_.var_magnet;
