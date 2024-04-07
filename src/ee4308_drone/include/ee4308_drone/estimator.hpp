@@ -528,11 +528,6 @@ namespace ee4308::drone
             //      Required for terminal printing during demonstration.
 
             (void) msg;
-            
-            // --- FIXME ---
-            // Ybaro_ = ...
-            // Correct z
-            // params_.var_baro
 
             Ybaro_ = msg.point.z;
 
@@ -553,18 +548,12 @@ namespace ee4308::drone
             Eigen::VectorXd Vbar_z(1), Rbar_z(1);
             Vbar_z << 1;
             Rbar_z << baro_var;
-            Eigen::RowVector3d Hbar_z = {1, 0, 1}; // include bias - {1, 0, 0} z position unstable
+            Eigen::RowVector3d Hbar_z = {1, 0, 1}; // include bias 
 
             // EKF Correction
             auto Kbar_z = Pz_ * Hbar_z.transpose() * (Hbar_z * Pz_ * Hbar_z.transpose() + Vbar_z * Rbar_z * Vbar_z).inverse();
             Xz_ = Xz_ + Kbar_z * (Ybaro_ - hbar_z - Xz_[2]);
             Pz_ = Pz_ - Kbar_z * Hbar_z * Pz_;
-
-
-            // // EKF Correction
-            // K_bar = Pz_ * H_z.transpose() * (1 / (H_z * Pz_ * H_z.transpose() + V_z * R_z * V_z));
-            // Pz_ = Pz_ - K_bar * H_z * Pz_;
-            // Xz_ = Xz_ + K_bar * (Ybaro_ - h_func - Xz_[2]);
             
             // --- EOFIXME ---
         }
