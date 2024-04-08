@@ -492,10 +492,10 @@ namespace ee4308::drone
 
             Eigen::VectorXd Y_mgn_a(1), h_mgn_a(1), V_mgn_a(1), R_mgn_a(1);
             Eigen::RowVector2d H_mgn_a;
-            double limit_x = limit_angle(msg.vector.x);
-            double limit_y = limit_angle(msg.vector.y);
-            Y_mgn_a << limit_angle(atan2(-limit_y, limit_x)); //atan2(y, x)
 
+            Y_mgn_a << limit_angle(atan2(-msg.vector.y, msg.vector.x)); //atan2(y, x)
+
+            // std::cout << "Magnetometer y value: " << msg.vector.y << "Magnetometer x value: " << msg.vector.x << std::endl;
             // Code to check for the variance value
             // if (mag_init_count >= 100){
             //     mag_y_var = variance_calc(mag_y_list);
@@ -508,7 +508,8 @@ namespace ee4308::drone
             //     mag_init_count++;
             // }    
 
-            h_mgn_a << limit_angle(Xa_[0]);
+            Xa_[0] = limit_angle(Xa_[0]);
+            h_mgn_a << Xa_[0];
             H_mgn_a << 1, 0;
             V_mgn_a << 1;
             R_mgn_a << params_.var_magnet;
@@ -516,16 +517,20 @@ namespace ee4308::drone
             // EKF Correction
             auto K_mgn = Pa_ * H_mgn_a.transpose() * (H_mgn_a * Pa_ * H_mgn_a.transpose() + V_mgn_a * R_mgn_a * V_mgn_a).inverse();
             if ((prev_x == msg.vector.x) && (prev_y == msg.vector.y)){
-                Xa_ = Xa_;
-                Pa_ = Pa_;
+               Xa_ = Xa_;
+               Pa_ = Pa_;
             }
             else{
-                Xa_ = Xa_ + K_mgn * (Y_mgn_a - h_mgn_a);
+                Eigen::VectorXd X_diff = (Y_mgn_a - h_mgn_a);
+                X_diff[0] = limit_angle(X_diff[0]);
+                // use x_intermediate to limit the intermediate angle
+                Xa_ = Xa_ + K_mgn * X_diff;
+                Xa_[0] = limit_angle(Xa_[0]);
                 Pa_ = Pa_ - K_mgn * H_mgn_a * Pa_;
             }
             Ymagnet_ = Y_mgn_a[0];
-            prev_x = msg.vector.x;
-            prev_y = msg.vector.y;
+            // prev_x = msg.vector.x;
+            // prev_y = msg.vector.y;
             // --- EOFIXME ---
         }
 
