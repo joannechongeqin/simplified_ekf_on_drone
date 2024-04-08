@@ -25,8 +25,8 @@ drone:
         lookahead: "lookahead"
       frame_id: "/world"
       lookahead_distance: 0.75  # initial 1.0
-      kp_horz: 0.5
-      kp_vert: 0.5
+      kp_horz: 0.65
+      kp_vert: 0.3
       max_horz_vel: 1.0
       max_horz_acc: 1.0
       max_vert_vel: 0.5

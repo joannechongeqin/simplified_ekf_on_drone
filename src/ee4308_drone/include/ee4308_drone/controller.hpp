@@ -344,10 +344,8 @@ namespace ee4308::drone
                     return;
                 }
             }
-
             // 3. No points found -> lookahead = desired waypoint
             lookahead_.point = plan_.back().pose.position; 
-            
             // --- EOFIXME ---
         }
 
@@ -359,17 +357,6 @@ namespace ee4308::drone
             double dy = lookahead_.point.y - drone_pose.position.y;
             double dz = lookahead_.point.z - drone_pose.position.z;
             double drone_yaw = quaternionToYaw(drone_pose.orientation);
-
-            // --- FIXME ---
-            // params_.kp_horz, params.kp_vert
-            // params_.max_horz_vel, params_.max_horz_acc
-            // params_.max_vert_vel, params_.max_vert_acc
-            // cmd_vel_
-            // params_.yaw_vel
-            // --- Remove the following code after fixing ---
-
-            // std::cout << "Moving from " << drone_pose.position.x << ", " << drone_pose.position.y << ", " << drone_pose.position.z 
-            //             << " to " << lookahead_.point.x << ", " << lookahead_.point.y << ", " << lookahead_.point.z << std::endl;
 
             // Lookahead point in robot frame
             double lookahead_rbtx = dx * cos(drone_yaw) + dy * sin(drone_yaw);
@@ -392,8 +379,6 @@ namespace ee4308::drone
             // Constraining accelerations
             double new_horz_acc = (d_horz - horz_prev) / elapsed_;
             double new_vert_acc = (d_vert - vert_prev) / elapsed_;
-            // std::cout << "Before constraints, horz_acc:" << new_horz_acc << "; vert_acc:" << new_vert_acc << std::endl;
-            // std::cout << "      desired_horz_vel:" << d_horz << "; desired_vert_vel:" << d_vert << std::endl;
             
             if (abs(new_horz_acc) >= params_.max_horz_acc)
                 new_horz_acc = params_.max_horz_acc * sgn(new_horz_acc);
