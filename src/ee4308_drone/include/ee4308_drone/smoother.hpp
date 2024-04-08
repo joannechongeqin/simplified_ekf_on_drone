@@ -148,14 +148,15 @@ namespace ee4308::drone
             double dist = sqrt(dx*dx + dy*dy + dz*dz);
             int num_points =  std::floor(dist / (params_.average_vel * params_.interval)); // total distance / distance per time step interval
             // std::cout << num_points << std::endl;
+            double dist_per_interval = params_.average_vel * params_.interval;
+            double unit_dx = dx/dist;
+            double unit_dy = dy/dist;
+            double unit_dz = dz/dist;
 
-            dx = dx / num_points;
-            dy = dy / num_points;
-            dz = dz / num_points;
             for (int i = 0; i < num_points; i++) {
-                pose_stamped.pose.position.x = start.pose.position.x + i * dx;
-                pose_stamped.pose.position.y = start.pose.position.y + i * dy;
-                pose_stamped.pose.position.z = start.pose.position.z + i * dz;
+                pose_stamped.pose.position.x = start.pose.position.x + i * dist_per_interval * unit_dx;
+                pose_stamped.pose.position.y = start.pose.position.y + i * dist_per_interval * unit_dy;
+                pose_stamped.pose.position.z = start.pose.position.z + i * dist_per_interval * unit_dz;
                 plan.poses.push_back(pose_stamped);
             }
             
