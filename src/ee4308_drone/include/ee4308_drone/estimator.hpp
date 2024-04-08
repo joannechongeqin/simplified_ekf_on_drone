@@ -386,7 +386,8 @@ namespace ee4308::drone
             Hgps_x << 1, 0;
             Vgps_x << 1;
             Rgps_x << params_.var_gps_x;
-            auto Kx = Px_ * Hgps_x.transpose() * (Hgps_x * Px_ * Hgps_x.transpose() + Vgps_x * Rgps_x * Vgps_x).inverse();
+            auto Kx = Px_ * Hgps_x.transpose() * (Hgps_x * Px_ * Hgps_x.transpose() 
+                                                    + Vgps_x * Rgps_x * Vgps_x).inverse();
             Xx_ = Xx_ + Kx * (Ygps_x - hgps_x);
             Px_ = Px_ - Kx * Hgps_x * Px_;
 
@@ -398,7 +399,8 @@ namespace ee4308::drone
             Hgps_y << 1, 0;
             Vgps_y << 1;
             Rgps_y << params_.var_gps_y;
-            auto Ky = Py_ * Hgps_y.transpose() * (Hgps_y * Py_ * Hgps_y.transpose() + Vgps_y * Rgps_y * Vgps_y).inverse();
+            auto Ky = Py_ * Hgps_y.transpose() * (Hgps_y * Py_ * Hgps_y.transpose() 
+                                                    + Vgps_y * Rgps_y * Vgps_y).inverse();
             Xy_ = Xy_ + Ky * (Ygps_y - hgps_y);
             Py_ = Py_ - Ky * Hgps_y * Py_;
 
@@ -410,7 +412,8 @@ namespace ee4308::drone
             Hgps_z << 1, 0, 0;
             Vgps_z << 1;
             Rgps_z << params_.var_gps_z;
-            auto Kz = Pz_ * Hgps_z.transpose() * (Hgps_z * Pz_ * Hgps_z.transpose() + Vgps_z * Rgps_z * Vgps_z).inverse();
+            auto Kz = Pz_ * Hgps_z.transpose() * (Hgps_z * Pz_ * Hgps_z.transpose() 
+                                                    + Vgps_z * Rgps_z * Vgps_z).inverse();
             Xz_ = Xz_ + Kz * (Ygps_z - hgps_z);
             Pz_ = Pz_ - Kz * Hgps_z * Pz_;
 
