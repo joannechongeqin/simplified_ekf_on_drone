@@ -21,7 +21,7 @@ drone:
       topics:
         odom_drone: "odom2" # cannot use odom
         waypoint: "waypoint" 
-        cmd_vel: "cmd_vel"
+        cmd_vel: "ccmd_vel"
         lookahead: "lookahead"
       frame_id: "/world"
       lookahead_distance: 0.75  # initial 1.0
