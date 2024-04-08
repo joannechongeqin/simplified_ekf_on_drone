@@ -65,7 +65,7 @@ drone:
       var_gps_x: 0.04  # constant obtained from /drone/gps topic
       var_gps_y: 0.04  # constant obtained from /drone/gps topic
       var_gps_z: 0.04  # constant obtained from /drone/gps topic
-      var_baro: 0.2   # will be calculated and updated inside the code each 100 datapoints
+      var_baro: 0.2  
       var_sonar: 0.2
       var_magnet: 0.001  # calculated by keeping drone still at the start and sampling 100 datapoints
       rad_polar: 6356752.3

@@ -436,6 +436,9 @@ namespace ee4308::drone
             return H;
         }
 
+        std::vector<double> sonar_list;
+        double sonar_init_count = 0;
+        double sonar_var = params_.var_sonar;
         void correctFromSonar(const sensor_msgs::msg::Range msg)
         {
             // !!! Store the measured sonar range in Ysonar_.
@@ -447,28 +450,39 @@ namespace ee4308::drone
                 return;
             }
 
-        // Low-pass filter parameters
-        const double alpha = params_.keep_old_sonar; // Exponential forgetting factor. Close to 1: more weight to older measurements.
+            // Variance calculation using new_Ysonar samples
+            if (sonar_init_count >= 100) {
+                double sonar_var_calc = variance_calc(sonar_list);
+                sonar_list.clear();
+                sonar_init_count = 0;
+                std::cout << "sonar variance: " << sonar_var_calc << std::endl;
+            } else {
+                sonar_list.push_back(new_Ysonar);
+                sonar_init_count++;
+            }
 
-        // Apply low-pass filter to smooth the sonar measurements
-        Ysonar_ = alpha * Ysonar_ + (1 - alpha) * new_Ysonar; // Smoothed measurement
+            // Low-pass filter parameters
+            const double alpha = params_.keep_old_sonar; // Exponential forgetting factor. Close to 1: more weight to older measurements.
 
-        // Sonar measurement noise variance
-        double var_sonar = params_.var_sonar;
+            // Apply low-pass filter to smooth the sonar measurements
+            Ysonar_ = alpha * Ysonar_ + (1 - alpha) * new_Ysonar; // Smoothed measurement
 
-        // Measurement vector with the smoothed value
-        Eigen::VectorXd Y_sonar(1);
-        Y_sonar << Ysonar_; // Use the smoothed sonar measurement
+            // Sonar measurement noise variance
+            double var_sonar = params_.var_sonar;
 
-        // Calculate the Kalman Gain
-        Eigen::MatrixXd H = H_sonar();
-        Eigen::MatrixXd S = H * Pz_ * H.transpose() + var_sonar * Eigen::MatrixXd::Identity(1, 1);
-        Eigen::MatrixXd K = Pz_ * H.transpose() * S.inverse();
+            // Measurement vector with the smoothed value
+            Eigen::VectorXd Y_sonar(1);
+            Y_sonar << Ysonar_; // Use the smoothed sonar measurement
 
-        // Update state estimate and covariance matrix using the smoothed measurement
-        Eigen::VectorXd z_pred = h_sonar(Xz_);
-        Xz_ = Xz_ + K * (Y_sonar - z_pred);
-        Pz_ = Pz_ - K * H * Pz_;
+            // Calculate the Kalman Gain
+            Eigen::MatrixXd H = H_sonar();
+            Eigen::MatrixXd S = H * Pz_ * H.transpose() + var_sonar * Eigen::MatrixXd::Identity(1, 1);
+            Eigen::MatrixXd K = Pz_ * H.transpose() * S.inverse();
+
+            // Update state estimate and covariance matrix using the smoothed measurement
+            Eigen::VectorXd z_pred = h_sonar(Xz_);
+            Xz_ = Xz_ + K * (Y_sonar - z_pred);
+            Pz_ = Pz_ - K * H * Pz_;
         }
 
         // ================================ Magnetic sub callback / EKF Correction ========================================
@@ -496,16 +510,16 @@ namespace ee4308::drone
             Ymagnet_ = limit_angle(atan2(-msg.vector.y, msg.vector.x)); //atan2(y, x)
 
             // Code to check for the variance value
-            // if (mag_init_count >= 100) {
-            //     mag_y_var = variance_calc(mag_y_list);
-            //     std::cout << "Variance of magnetometer is: " << mag_y_var << std::endl;
-            //     mag_y_list.clear();
-            //     mag_init_count = 0;
-            // }
-            // else{
-            //     mag_y_list.push_back(Y_mgn_a[0]);
-            //     mag_init_count++;
-            // }
+            if (mag_init_count >= 100) {
+                mag_y_var = variance_calc(mag_y_list);
+                std::cout << "magnetometer variance: " << mag_y_var << std::endl;
+                mag_y_list.clear();
+                mag_init_count = 0;
+            }
+            else {
+                mag_y_list.push_back(Ymagnet_);
+                mag_init_count++;
+            }
 
             double h_mgn_a = limit_angle(Xa_[0]);
             H_mgn_a << 1, 0;
@@ -532,22 +546,21 @@ namespace ee4308::drone
             // !!! Store the measured barometer altitude in Ybaro_.
             //      Required for terminal printing during demonstration.
 
-            (void) msg;
+            // (void) msg;
 
             Ybaro_ = msg.point.z;
 
-            // Variance calculation using Ybaro_ samples, update baro_var every 100 samples
+            // Variance calculation using Ybaro_ samples
             if (baro_init_count >= 100) {
-                baro_var = variance_calc(baro_list);
+                double baro_var_calc = variance_calc(baro_list);
                 baro_list.clear();
                 baro_init_count = 0;
-            }
-            else {
+                std::cout << "barometer variance: " << baro_var_calc << std::endl;
+            } else {
                 baro_list.push_back(Ybaro_);
                 baro_init_count++;
             }
-
-            std::cout << "Variance of barometer is: " << baro_var << std::endl;
+            
 
             double hbar_z = Xz_[0];
             Eigen::VectorXd Vbar_z(1), Rbar_z(1);
