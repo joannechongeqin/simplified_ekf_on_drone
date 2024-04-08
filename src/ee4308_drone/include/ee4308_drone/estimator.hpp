@@ -602,8 +602,8 @@ namespace ee4308::drone
             // --- Simplified Motion Model -> to derive EKF prediction formulas ---
             // Xx_[0] = prev_x + prev_xx * dt + 0.5 * dt * dt * (u_x * cos(yaw) - u_y * sin(yaw)); // x_k|k-1
             // Xx_[1] = prev_xx + dt * (u_x * cos(yaw) - u_y * sin(yaw)); // x_dot_k|k-1
-            // Xy_[0] = prev_y + prev_yy * dt - 0.5 * dt * dt * (u_x * sin(yaw) + u_y * cos(yaw)); // y_k|k-1
-            // Xy_[1] = prev_yy - dt * (u_x * sin(yaw) + u_y * cos(yaw)); // y_dot_k|k-1
+            // Xy_[0] = prev_y + prev_yy * dt + 0.5 * dt * dt * (u_x * sin(yaw) + u_y * cos(yaw)); // y_k|k-1
+            // Xy_[1] = prev_yy + dt * (u_x * sin(yaw) + u_y * cos(yaw)); // y_dot_k|k-1
             // Xz_[0] = prev_z + prev_zz * dt + 0.5 * dt * dt * (u_z - G); // z_k|k-1
             // Xz_[1] = prev_zz + dt * (u_z - G); // z_dot_k|k-1
             // Xa_[0] = yaw + dt * u_a; // ψ_k|k-1
@@ -626,8 +626,8 @@ namespace ee4308::drone
             Eigen::Matrix2d F_y, W_y, Q_y;
             F_y << 1, dt,
                    0, 1;
-            W_y << -0.5 * dt * dt * sin(yaw), -0.5 * dt * dt * cos(yaw),
-                        -dt * sin(yaw),              -dt * cos(yaw);
+            W_y << 0.5 * dt * dt * sin(yaw), 0.5 * dt * dt * cos(yaw),
+                        dt * sin(yaw),              dt * cos(yaw);
             Q_y << params_.var_imu_x, 0,
                    0, params_.var_imu_y;
             Xy_ = F_y * Xy_ + W_y * U_y;
