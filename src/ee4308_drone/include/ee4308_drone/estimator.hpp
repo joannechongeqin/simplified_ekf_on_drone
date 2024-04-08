@@ -491,14 +491,12 @@ namespace ee4308::drone
             // Correct yaw
             // params_.var_magnet
 
-            Eigen::VectorXd Y_mgn_a(1), h_mgn_a(1), V_mgn_a(1), R_mgn_a(1);
+            Eigen::VectorXd V_mgn_a(1), R_mgn_a(1);
             Eigen::RowVector2d H_mgn_a;
-            double limit_x = limit_angle(msg.vector.x);
-            double limit_y = limit_angle(msg.vector.y);
-            Y_mgn_a << limit_angle(atan2(-limit_y, limit_x)); //atan2(y, x)
+            Ymagnet_ = limit_angle(atan2(-msg.vector.y, msg.vector.x)); //atan2(y, x)
 
             // Code to check for the variance value
-            // if (mag_init_count >= 100){
+            // if (mag_init_count >= 100) {
             //     mag_y_var = variance_calc(mag_y_list);
             //     std::cout << "Variance of magnetometer is: " << mag_y_var << std::endl;
             //     mag_y_list.clear();
@@ -507,18 +505,20 @@ namespace ee4308::drone
             // else{
             //     mag_y_list.push_back(Y_mgn_a[0]);
             //     mag_init_count++;
-            // }    
+            // }
 
-            h_mgn_a << limit_angle(Xa_[0]);
+            double h_mgn_a = limit_angle(Xa_[0]);
             H_mgn_a << 1, 0;
             V_mgn_a << 1;
             R_mgn_a << params_.var_magnet;
 
             // EKF Correction
-            auto K_mgn = Pa_ * H_mgn_a.transpose() * (H_mgn_a * Pa_ * H_mgn_a.transpose() + V_mgn_a * R_mgn_a * V_mgn_a).inverse();
-            Xa_ = Xa_ + K_mgn * (Y_mgn_a - h_mgn_a);
+            auto K_mgn = Pa_ * H_mgn_a.transpose() * (H_mgn_a * Pa_ * H_mgn_a.transpose() 
+                                                        + V_mgn_a * R_mgn_a * V_mgn_a).inverse();
+            double angle_diff = limit_angle(Ymagnet_ - h_mgn_a);
+            Xa_ = Xa_ + K_mgn * angle_diff;
+            Xa_[0] = limit_angle(Xa_[0]);
             Pa_ = Pa_ - K_mgn * H_mgn_a * Pa_;
-            Ymagnet_ = Y_mgn_a[0];
 
             // --- EOFIXME ---
         }
@@ -536,8 +536,8 @@ namespace ee4308::drone
 
             Ybaro_ = msg.point.z;
 
-            // Variance calculation using Ybaro_ samples
-            if (baro_init_count >= 100){
+            // Variance calculation using Ybaro_ samples, update baro_var every 100 samples
+            if (baro_init_count >= 100) {
                 baro_var = variance_calc(baro_list);
                 baro_list.clear();
                 baro_init_count = 0;
