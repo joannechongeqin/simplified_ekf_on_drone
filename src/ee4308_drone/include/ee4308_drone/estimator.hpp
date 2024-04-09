@@ -451,15 +451,15 @@ namespace ee4308::drone
             }
 
             // Variance calculation using new_Ysonar samples
-            if (sonar_init_count >= 100) {
-                double sonar_var_calc = variance_calc(sonar_list);
-                sonar_list.clear();
-                sonar_init_count = 0;
-                std::cout << "sonar variance: " << sonar_var_calc << std::endl;
-            } else {
-                sonar_list.push_back(new_Ysonar);
-                sonar_init_count++;
-            }
+            // if (sonar_init_count >= 100) {
+            //     double sonar_var_calc = variance_calc(sonar_list);
+            //     sonar_list.clear();
+            //     sonar_init_count = 0;
+            //     std::cout << "sonar variance: " << sonar_var_calc << std::endl;
+            // } else {
+            //     sonar_list.push_back(new_Ysonar);
+            //     sonar_init_count++;
+            // }
 
             // Low-pass filter parameters
             const double alpha = params_.keep_old_sonar; // Exponential forgetting factor. Close to 1: more weight to older measurements.
@@ -510,16 +510,16 @@ namespace ee4308::drone
             Ymagnet_ = limit_angle(atan2(-msg.vector.y, msg.vector.x)); //atan2(y, x)
 
             // Code to check for the variance value
-            if (mag_init_count >= 100) {
-                mag_y_var = variance_calc(mag_y_list);
-                std::cout << "magnetometer variance: " << mag_y_var << std::endl;
-                mag_y_list.clear();
-                mag_init_count = 0;
-            }
-            else {
-                mag_y_list.push_back(Ymagnet_);
-                mag_init_count++;
-            }
+            // if (mag_init_count >= 100) {
+            //     mag_y_var = variance_calc(mag_y_list);
+            //     std::cout << "magnetometer variance: " << mag_y_var << std::endl;
+            //     mag_y_list.clear();
+            //     mag_init_count = 0;
+            // }
+            // else {
+            //     mag_y_list.push_back(Ymagnet_);
+            //     mag_init_count++;
+            // }
 
             double h_mgn_a = limit_angle(Xa_[0]);
             H_mgn_a << 1, 0;
@@ -551,15 +551,15 @@ namespace ee4308::drone
             Ybaro_ = msg.point.z;
 
             // Variance calculation using Ybaro_ samples
-            if (baro_init_count >= 100) {
-                double baro_var_calc = variance_calc(baro_list);
-                baro_list.clear();
-                baro_init_count = 0;
-                std::cout << "barometer variance: " << baro_var_calc << std::endl;
-            } else {
-                baro_list.push_back(Ybaro_);
-                baro_init_count++;
-            }
+            // if (baro_init_count >= 100) {
+            //     double baro_var_calc = variance_calc(baro_list);
+            //     baro_list.clear();
+            //     baro_init_count = 0;
+            //     std::cout << "barometer variance: " << baro_var_calc << std::endl;
+            // } else {
+            //     baro_list.push_back(Ybaro_);
+            //     baro_init_count++;
+            // }
             
 
             double hbar_z = Xz_[0];
