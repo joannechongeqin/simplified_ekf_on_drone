@@ -556,11 +556,11 @@ namespace ee4308::drone
                 baro_var = variance_calc(baro_list);
                 baro_list.clear();
                 baro_init_count = 0;
-                std::cout << "barometer variance: " << baro_var << std::endl;
             } else {
                 baro_list.push_back(Ybaro_);
                 baro_init_count++;
             }
+            std::cout << "barometer variance: " << baro_var << std::endl;
             
 
             // double hbar_z = Xz_[0];
