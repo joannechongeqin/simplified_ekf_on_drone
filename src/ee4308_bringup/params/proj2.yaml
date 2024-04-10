@@ -58,10 +58,10 @@ drone:
         gt_vel: "gt_vel"
       frequency: 10.0
       G: 9.8
-      var_imu_x: 0.2  # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
-      var_imu_y: 0.2  # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
-      var_imu_z: 0.2  # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
-      var_imu_a: 0.2  # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
+      var_imu_x: 0.27  # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
+      var_imu_y: 0.265 # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
+      var_imu_z: 0.28  # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
+      var_imu_a: 0.1 # TO TUNE AFTER EKF CORRECTIONS ARE IMPLEMENTED
       var_gps_x: 0.04  # constant obtained from /drone/gps topic
       var_gps_y: 0.04  # constant obtained from /drone/gps topic
       var_gps_z: 0.04  # constant obtained from /drone/gps topic
