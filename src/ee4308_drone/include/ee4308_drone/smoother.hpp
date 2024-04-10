@@ -140,8 +140,23 @@ namespace ee4308::drone
             // params_.interval;
             // --- Remove the following code after fixing ---
             geometry_msgs::msg::PoseStamped pose_stamped;
+            // interpolate straight line points at regular interval              
             
-            // interpolate straight line points at regular interval
+            // method 1
+            // Eigen::Vector3d startVec = Eigen::Vector3d(start.pose.position.x, start.pose.position.y, start.pose.position.z);
+            // Eigen::Vector3d goalVec = Eigen::Vector3d(goal.pose.position.x, goal.pose.position.y, goal.pose.position.z);
+            // Eigen::Vector3d distMovedPerInterval = (goalVec - startVec).normalized() * params_.average_vel * params_.interval;
+
+            // Eigen::Vector3d currentVec = startVec;
+            // while ((currentVec - goalVec).norm() > distMovedPerInterval.norm()) {
+            //     pose_stamped.pose.position.x = currentVec(0);
+            //     pose_stamped.pose.position.y = currentVec(1);
+            //     pose_stamped.pose.position.z = currentVec(2);
+            //     plan.poses.push_back(pose_stamped);
+            //     currentVec += distMovedPerInterval;
+            // }
+
+            // method 2
             double dx = goal.pose.position.x - start.pose.position.x;
             double dy = goal.pose.position.y - start.pose.position.y;
             double dz = goal.pose.position.z - start.pose.position.z;
@@ -158,9 +173,8 @@ namespace ee4308::drone
                 pose_stamped.pose.position.z = start.pose.position.z + i * dz;
                 plan.poses.push_back(pose_stamped);
             }
-            
-            // add goal point to final plan
 
+            // add goal point to final plan
             pose_stamped.pose.position.x = goal.pose.position.x; 
             pose_stamped.pose.position.y = goal.pose.position.y; 
             pose_stamped.pose.position.z = goal.pose.position.z; 
