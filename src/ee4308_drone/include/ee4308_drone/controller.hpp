@@ -337,7 +337,8 @@ namespace ee4308::drone
 
             // 2. from the closest point, search along the back of path towards the desired waypoint
             //    identify the first point that exceeds the lookahead distance
-            for (int i = closest_point_index + 1; i < plan_.size(); i++) { // start seraching from the next point after the closest point
+            for (int i = closest_point_index + 1; i < plan_.size(); i++) { 
+                // start seraching from the next point after the closest point
                 double distance = getDronePosToPathPosDistance(drone_pose, plan_[i]);
                 if (distance > params_.lookahead_distance) { // first point that exceeds the lookahead distance
                     lookahead_.point = plan_[i].pose.position; // is the lookahead point
