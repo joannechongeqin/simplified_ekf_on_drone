@@ -325,7 +325,8 @@ namespace ee4308::drone
             // 1. find closest point on the path
             double closest_point_index;
             double min_distance = std::numeric_limits<double>::max();
-            for (int i = 0; i < plan_.size(); i++) {
+            int plan_size = plan_.size();
+            for (int i = 0; i < plan_size; i++) {
                 double distance = getDronePosToPathPosDistance(drone_pose, plan_[i]);
                 // std::cout << "distance:" << distance << std::endl;
                 if (distance < min_distance) {
@@ -337,7 +338,7 @@ namespace ee4308::drone
 
             // 2. from the closest point, search along the back of path towards the desired waypoint
             //    identify the first point that exceeds the lookahead distance
-            for (int i = closest_point_index + 1; i < plan_.size(); i++) { 
+            for (int i = closest_point_index + 1; i < plan_size; i++) { 
                 // start seraching from the next point after the closest point
                 double distance = getDronePosToPathPosDistance(drone_pose, plan_[i]);
                 if (distance > params_.lookahead_distance) { // first point that exceeds the lookahead distance
