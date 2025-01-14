@@ -1,4 +1,4 @@
-# EE4308_AY2324_Sem2_Proj_2 - Simplified Extended Kalman Filter on a Drone
+# Simplified Extended Kalman Filter on a Drone
 ## Features
 - Estimator: Extended Kalman Filter (EKF)
   - EKF Prediction on X-axis, Y-axis, Z-axis and Yaw angle based on the simplified INS model
@@ -8,8 +8,8 @@
 
 ## How to Run
 ```shell
-git clone https://github.com/joannechongeqin/ee4308_proj2.git
-cd ee4308_proj2
+git clone https://github.com/joannechongeqin/simplified_ekf_on_drone.git
+cd simplified_ekf_on_drone
 . bd.sh
 . run.sh
 ```
